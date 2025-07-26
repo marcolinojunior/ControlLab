@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ControlLab</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script>
+        MathJax = {
+          tex: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']]
+          },
+          svg: {
+            fontCache: 'global'
+          }
+        };
+    </script>
+    <script type="text/javascript" id="MathJax-script" async
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+    </script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>ControlLab</h1>
+            <p>Análise Interativa de Sistemas de Controle</p>
+        </header>
+        <main>
+            <div class="input-section">
+                <input type="text" id="tf-input" placeholder="Digite a função de transferência. Ex: 1/(s^2 + s + 1)">
+                <button id="submit-btn">Analisar</button>
+            </div>
+            <div class="output-section">
+                <div id="steps-container">
+                    <h2>Passos da Resolução</h2>
+                    <div id="steps"></div>
+                </div>
+                <div id="plot-container">
+                    <h2>Gráfico Interativo</h2>
+                    <div id="plot"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="main.js"></script>
+</body>
+</html>

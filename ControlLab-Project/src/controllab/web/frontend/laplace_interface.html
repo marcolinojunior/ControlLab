@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ControlLab - Transformada de Laplace</title>
+    <link rel="stylesheet" href="styles.css">
+    <script>
+        MathJax = {
+          tex: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']]
+          },
+          svg: {
+            fontCache: 'global'
+          }
+        };
+    </script>
+    <script type="text/javascript" id="MathJax-script" async
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+    </script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>ControlLab</h1>
+            <p>Da Equação Diferencial à Função de Transferência</p>
+        </header>
+        <main>
+            <div class="input-section">
+                <input type="text" id="diff-eq-input" placeholder="Digite a equação diferencial. Ex: y(t).diff(t, t) + 2*y(t).diff(t) + y(t) = x(t)">
+                <button id="submit-btn">Transformar</button>
+            </div>
+            <div class="output-section-single">
+                <div id="steps-container">
+                    <h2>Passos da Resolução</h2>
+                    <div id="steps"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="main.js"></script>
+</body>
+</html>
