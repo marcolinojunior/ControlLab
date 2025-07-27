@@ -97,10 +97,10 @@ def design_antiwindup_compensation(controller: SymbolicTransferFunction,
     except ValueError as e:
         history_report = controller.history.get_formatted_report()
         error_message = (
-            f"FALHA NO PROJETO ANTI-WINDUP: O controlador fornecido não é um PID válido.\n\n"
+            f"FALHA NO PROJETO ANTI-WINDUP: O controlador fornecido não é um PID válido e não pôde ser decomposto.\n\n"
             f"--> MOTIVO TÉCNICO: {e}\n\n"
-            f"--> DIAGNÓSTICO (Histórico do Objeto):\n{history_report}\n\n"
-            f"--> AÇÃO RECOMENDADA: Verifique a criação do seu controlador. O erro comum é usar um denominador extra, resultando em s**2."
+            f"--> DIAGNÓSTICO (Histórico do Objeto Problemático):\n{history_report}\n\n"
+            f"--> AÇÃO RECOMENDADA: Verifique a criação do seu controlador. O erro comum é a definição de um denominador incorreto."
         )
         raise ValueError(error_message) from e
 
