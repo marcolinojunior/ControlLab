@@ -55,6 +55,7 @@ try:
     from controllab.analysis.frequency_response import FrequencyAnalyzer, StabilityMargins
     from controllab.analysis.stability_utils import (StabilityValidator, ParametricAnalyzer,
                                  ValidationHistory, format_stability_report)
+    from controllab.analysis.pedagogical_formatter import format_routh_hurwitz_response
 except ImportError as e:
     print(f"Aviso: Alguns módulos de análise não estão disponíveis: {e}")
     print("Tentando imports alternativos...")
@@ -66,6 +67,7 @@ except ImportError as e:
         from frequency_response import FrequencyAnalyzer, StabilityMargins
         from stability_utils import (StabilityValidator, ParametricAnalyzer,
                                      ValidationHistory, format_stability_report)
+        from pedagogical_formatter import format_routh_hurwitz_response
         print("Imports alternativos bem-sucedidos!")
     except ImportError:
         warnings.warn(f"Alguns módulos de análise não estão disponíveis: {e}")
@@ -127,6 +129,16 @@ class ComprehensiveStabilityReport:
             'note': note
         })
     
+    def add_analysis_report(self, method: str, report: dict):
+        """Adiciona um relatório de análise."""
+        if method == 'Routh-Hurwitz':
+            self.routh_hurwitz_results = report
+
+    def add_analysis_report(self, method: str, report: dict):
+        """Adiciona um relatório de análise."""
+        if method == 'Routh-Hurwitz':
+            self.routh_hurwitz_results = report
+
     def add_conclusion(self, method: str, conclusion: str, confidence: str = "Alta"):
         """Adiciona conclusão de método"""
         self.conclusions.append({
@@ -511,12 +523,29 @@ class StabilityAnalysisEngine:
         Returns:
             ComprehensiveStabilityReport com análise completa
         """
-        return self.comprehensive_analysis(
-            tf_obj, 
-            show_all_steps=show_steps,
-            include_validation=True,
-            include_parametric=False
-        )
+        report = ComprehensiveStabilityReport()
+
+        # Adicionar informações do sistema
+        report.add_system_info(tf_obj, "Sistema sob análise")
+
+        # 1. Análise de Routh-Hurwitz
+        if self.routh_analyzer:
+            try:
+                char_poly = self._extract_characteristic_polynomial(tf_obj)
+                stability_result, history, polynomial = self.routh_analyzer.analyze(char_poly)
+                pedagogical_report = format_routh_hurwitz_response(stability_result, history, polynomial)
+                report.add_analysis_report('Routh-Hurwitz', pedagogical_report)
+                conclusion = "Sistema estável" if stability_result.is_stable else "Sistema instável"
+                report.add_conclusion("Routh-Hurwitz", conclusion)
+
+                if show_steps:
+                    report.add_educational_note("Routh-Hurwitz",
+                        "Método algébrico que analisa estabilidade sem calcular raízes explicitamente")
+
+            except Exception as e:
+                report.add_conclusion("Routh-Hurwitz", f"Erro na análise: {e}", "Baixa")
+
+        return report
     
     def _extract_characteristic_polynomial(self, tf_obj):
         """Extrai polinômio característico da função de transferência"""
