@@ -346,7 +346,8 @@ def design_lead_compensator(plant: SymbolicTransferFunction,
         compensator.history.add_warning(
             source_function="design_lead_compensator",
             message=f"O avanço de fase de {phase_margin_target}° é muito grande para um único compensador de avanço. "
-            "Pode ser necessário um compensador de ordem superior ou um método de projeto diferente."
+            "Pode ser necessário um compensador de ordem superior ou um método de projeto diferente.",
+            context={"phase_margin_target": phase_margin_target}
         )
 
     result.add_step(f"Compensador Lead genérico: C(s) = {compensator}")
