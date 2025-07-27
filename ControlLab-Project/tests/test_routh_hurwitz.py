@@ -36,18 +36,16 @@ class TestRouthHurwitzBasic(unittest.TestCase):
         # s³ + 3s² + 3s + 1 (estável)
         poly = self.s**3 + 3*self.s**2 + 3*self.s + 1
 
-        routh_array = self.analyzer.build_routh_array(poly)
-        result = self.analyzer.analyze_stability(routh_array)
+        result = self.analyzer.analyze(poly)
 
-        self.assertEqual(result['conclusion'], 'SISTEMA ESTÁVEL - Zero mudanças de sinal')
+        self.assertEqual(result['conclusion'], 'ESTÁVEL')
 
     def test_unstable_system(self):
         """Teste com sistema instável"""
         # s³ - 2s² + s + 1 (instável)
         poly = self.s**3 - 2*self.s**2 + self.s + 1
 
-        routh_array = self.analyzer.build_routh_array(poly)
-        result = self.analyzer.analyze_stability(routh_array)
+        result = self.analyzer.analyze(poly)
 
         self.assertIn('INSTÁVEL', result['conclusion'])
 
@@ -64,8 +62,7 @@ class TestRouthHurwitzSpecialCases(unittest.TestCase):
         # s⁴ + s³ + 2s² + 2s + 3 (tem zero na primeira coluna)
         poly = self.s**4 + self.s**3 + 2*self.s**2 + 2*self.s + 3
 
-        routh_array = self.analyzer.build_routh_array(poly)
-        result = self.analyzer.analyze_stability(routh_array)
+        result = self.analyzer.analyze(poly)
 
         # Deve lidar com o caso especial
         self.assertIsNotNone(result)
@@ -75,8 +72,7 @@ class TestRouthHurwitzSpecialCases(unittest.TestCase):
         # s⁴ + 2s³ + 3s² + 2s + 1 (pode ter linha de zeros)
         poly = self.s**4 + 2*self.s**3 + 3*self.s**2 + 2*self.s + 1
 
-        routh_array = self.analyzer.build_routh_array(poly)
-        result = self.analyzer.analyze_stability(routh_array)
+        result = self.analyzer.analyze(poly)
 
         # Deve lidar com o caso especial
         self.assertIsNotNone(result)
@@ -94,8 +90,7 @@ class TestRouthHurwitzParametric(unittest.TestCase):
         # s³ + 2s² + s + K
         poly = self.s**3 + 2*self.s**2 + self.s + self.K
 
-        routh_array = self.analyzer.build_routh_array(poly)
-        result = self.analyzer.analyze_stability(routh_array)
+        result = self.analyzer.analyze(poly)
 
         # Deve ter informações sobre range de estabilidade
         self.assertIn('steps', result)
@@ -112,8 +107,7 @@ class TestRouthHurwitzPedagogical(unittest.TestCase):
         """Teste análise passo a passo"""
         poly = self.s**3 + 2*self.s**2 + 3*self.s + 1
 
-        routh_array = self.analyzer.build_routh_array(poly, show_steps=True)
-        result = self.analyzer.analyze_stability(routh_array, show_steps=True)
+        result = self.analyzer.analyze(poly, show_steps=True)
 
         # Deve ter histórico pedagógico
         self.assertIn('steps', result)

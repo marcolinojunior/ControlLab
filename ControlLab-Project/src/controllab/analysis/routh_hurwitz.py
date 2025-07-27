@@ -92,6 +92,7 @@ class StabilityResult:
         self.sign_changes = 0
         self.routh_array = None
         self.history = None
+        self.stability_status = None
 
     def get_formatted_history(self) -> str:
         """Retorna histórico formatado da análise"""
@@ -250,7 +251,7 @@ class RouthHurwitzAnalyzer:
             self.history.add_step(
                 "TABELA_COMPLETA",
                 "Tabela de Routh construída completamente",
-                routh_obj.display_array(),
+                routh_obj.array,
                 "Todas as linhas calculadas usando fórmula de Routh"
             )
 
@@ -359,7 +360,18 @@ class RouthHurwitzAnalyzer:
 
         return new_row
 
-    def _build_pedagogical_response(self) -> Dict[str, Any]:
+    def _convert_matrix_to_latex(self, matrix: List[List[Any]]) -> str:
+        """Converte uma matriz em uma string LaTeX."""
+        if not matrix:
+            return ""
+
+        latex = "\\begin{bmatrix}\n"
+        for row in matrix:
+            latex += " & ".join(map(str, row)) + " \\\\\n"
+        latex += "\\end{bmatrix}"
+        return latex
+
+    def _build_pedagogical_response(self, result: StabilityResult) -> Dict[str, Any]:
         """
         Constrói a resposta pedagógica estruturada em JSON.
 
@@ -367,36 +379,69 @@ class RouthHurwitzAnalyzer:
             Dict[str, Any]: Dicionário com a análise pedagógica completa.
         """
 
-        summary = {
-            'polynomial': str(self.history.polynomial),
-            'stability': self.history.stability_conclusion,
-            'special_cases': self.history.special_cases
+        response = {
+            "conclusion": result.stability_status, # Ex: "ESTÁVEL" ou "INSTÁVEL"
+            "summary": f"O sistema é {result.stability_status.lower()} pois foram encontradas {result.sign_changes} trocas de sinal na primeira coluna da tabela de Routh.",
+            "steps": []
         }
 
-        return {
-            'conclusion': self.history.stability_conclusion,
-            'summary': summary,
-            'steps': self.history.steps
-        }
+        pedagogical_steps = []
 
-    def analyze_stability(self, routh_obj: RouthArray, show_steps: bool = True) -> Union[StabilityResult, Dict[str, Any]]:
+        # 1. Passo de Verificação dos Coeficientes
+        initial_coeffs_step = next((s for s in self.history.steps if s['type'] == "COEFICIENTES"), None)
+        if initial_coeffs_step:
+            coeffs = initial_coeffs_step['data']
+            is_numeric = all(isinstance(c, (int, float)) or (hasattr(c, 'is_real') and c.is_real) for c in coeffs)
+
+            pedagogical_steps.append({
+                "title": "1. Verificação dos Coeficientes",
+                "explanation": "Uma condição necessária para a estabilidade é que todos os coeficientes do polinômio característico sejam positivos.",
+                "data": {"coefficients": [float(c) for c in coeffs if is_numeric]}
+            })
+
+        # 2. Passo de Construção da Tabela (com LaTeX)
+        routh_table_step = next((s for s in self.history.steps if s['type'] == "TABELA_COMPLETA"), None)
+        if routh_table_step:
+            latex_table = self._convert_matrix_to_latex(routh_table_step['data'])
+            pedagogical_steps.append({
+                "title": "2. Construção da Tabela de Routh",
+                "explanation": "A tabela é construída a partir dos coeficientes para analisar a distribuição dos polos.",
+                "data": {"routh_table_latex": latex_table}
+            })
+
+        # 3. Passo de Análise da Primeira Coluna
+        analysis_step = next((s for s in self.history.steps if s['type'] == "PRIMEIRA_COLUNA"), None)
+        if analysis_step:
+             pedagogical_steps.append({
+                "title": "3. Análise da Primeira Coluna",
+                "explanation": f"O número de trocas de sinal na primeira coluna ({analysis_step['data']}) indica o número de polos instáveis (no semiplano direito).",
+                "data": {"sign_changes": result.sign_changes}
+            })
+
+        response["steps"] = pedagogical_steps
+        return response
+
+    def analyze(self, polynomial, variable='s', show_steps: bool = True) -> Dict[str, Any]:
         """
         Analisa a estabilidade baseada na tabela de Routh
 
         Args:
-            routh_obj: Objeto RouthArray com tabela construída
+            polynomial: Polinômio característico
+            variable: Variável do polinômio (padrão 's')
             show_steps: Se deve mostrar os passos
 
         Returns:
-            StabilityResult: Resultado da análise
+            Dict[str, Any]: Resultado da análise pedagógica
         """
         if show_steps:
             self.history.add_step(
                 "INICIO_ANALISE",
                 "Iniciando análise de estabilidade",
-                routh_obj.display_array(),
+                "",
                 "Contando mudanças de sinal na primeira coluna"
             )
+
+        routh_obj = self.build_routh_array(polynomial, variable, show_steps)
 
         result = StabilityResult()
         result.routh_array = routh_obj
@@ -426,14 +471,17 @@ class RouthHurwitzAnalyzer:
             # Verificar se há zeros na primeira coluna (marginal)
             if any(elem == 0 or elem == self.epsilon for elem in first_column):
                 result.is_stable = None  # Marginalmente estável ou análise especial necessária
+                result.stability_status = "MARGINALMENTE ESTÁVEL"
                 if show_steps:
                     self.history.stability_conclusion = "MARGINALMENTE ESTÁVEL ou requer análise especial"
             else:
                 result.is_stable = True
+                result.stability_status = "ESTÁVEL"
                 if show_steps:
                     self.history.stability_conclusion = "SISTEMA ESTÁVEL - Zero mudanças de sinal"
         else:
             result.is_stable = False
+            result.stability_status = "INSTÁVEL"
             if show_steps:
                 self.history.stability_conclusion = f"SISTEMA INSTÁVEL - {sign_changes} polos instáveis"
 
@@ -445,7 +493,7 @@ class RouthHurwitzAnalyzer:
                 "Baseado no critério de Routh-Hurwitz"
             )
 
-        return self._build_pedagogical_response()
+        return self._build_pedagogical_response(result)
 
     def _count_sign_changes(self, first_column: List, show_steps: bool) -> int:
         """Conta mudanças de sinal na primeira coluna"""
@@ -576,11 +624,10 @@ def build_routh_array(polynomial, variable='s', show_steps: bool = True) -> Rout
     return analyzer.build_routh_array(polynomial, variable, show_steps)
 
 
-def analyze_stability(polynomial, variable='s', show_steps: bool = True) -> Union[StabilityResult, Dict[str, Any]]:
+def analyze_stability(polynomial, variable='s', show_steps: bool = True) -> Dict[str, Any]:
     """Função wrapper para análise completa de estabilidade"""
     analyzer = RouthHurwitzAnalyzer()
-    routh_obj = analyzer.build_routh_array(polynomial, variable, show_steps)
-    return analyzer.analyze_stability(routh_obj, show_steps)
+    return analyzer.analyze(polynomial, variable, show_steps)
 
 
 def handle_zero_in_first_column(array, row_index):
