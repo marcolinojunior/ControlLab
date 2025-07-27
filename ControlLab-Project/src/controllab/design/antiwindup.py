@@ -95,6 +95,13 @@ def design_antiwindup_compensation(controller: SymbolicTransferFunction,
         # Tenta executar a operação crítica
         kp, ki, kd = decompose_pid_controller(controller)
     except ValueError as e:
+        controller.history.add_step(
+            "Falha na Decomposição",
+            "Falha ao decompor o controlador em ganhos PID.",
+            controller,
+            None,
+            context_object=f"Planta: {plant}"
+        )
         history_report = controller.history.get_formatted_report()
         error_message = (
             f"FALHA NO PROJETO ANTI-WINDUP: O controlador fornecido não é um PID válido e não pôde ser decomposto.\n\n"

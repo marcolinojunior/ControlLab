@@ -11,7 +11,7 @@ import sympy as sp
 class OperationStep:
     """Representa um passo de operação no histórico"""
 
-    def __init__(self, operation: str, description: str, before: Any, after: Any, explanation: Optional[str] = None, metadata: Optional[Dict] = None):
+    def __init__(self, operation: str, description: str, before: Any, after: Any, explanation: Optional[str] = None, metadata: Optional[Dict] = None, context_object: Optional[Any] = None):
         self.operation = operation
         self.description = description
         self.before = before
@@ -19,6 +19,7 @@ class OperationStep:
         self.explanation = explanation
         self.timestamp = datetime.now()
         self.metadata = metadata or {}
+        self.context_object = context_object
 
     def __str__(self):
         return f"[{self.operation}] {self.description}"
@@ -30,39 +31,53 @@ class OperationHistory:
 
     def __init__(self, max_steps: int = 100):
         self.steps: List[OperationStep] = []
+        self.warnings: List[str] = []
         self.max_steps = max_steps
 
-    def add_step(self, operation: str, description: str, before: Any, after: Any, explanation: Optional[str] = None, metadata: Optional[Dict] = None):
+    def add_step(self, operation: str, description: str, before: Any, after: Any, explanation: Optional[str] = None, metadata: Optional[Dict] = None, context_object: Optional[Any] = None):
         """Adiciona um passo ao histórico"""
-        step = OperationStep(operation, description, before, after, explanation, metadata)
+        step = OperationStep(operation, description, before, after, explanation, metadata, context_object)
         self.steps.append(step)
 
         # Limita o número de passos
         if len(self.steps) > self.max_steps:
             self.steps.pop(0)
 
+    def add_warning(self, warning: str):
+        """Adiciona um aviso ao histórico"""
+        self.warnings.append(warning)
+
     def get_formatted_report(self) -> str:
         """
         Gera um relatório detalhado e legível do histórico de operações,
         otimizado para ser usado em mensagens de erro e diagnósticos.
         """
-        if not self.steps:
+        if not self.steps and not self.warnings:
             return "--- Diagnóstico do Objeto: Nenhuma operação registrada. O objeto está em seu estado inicial. ---\n"
 
         report_lines = [
             "==================================================",
             "==    Diagnóstico de Histórico do Objeto          ==",
             "==================================================",
-            "A seguir, a sequência de operações que levaram ao estado atual do objeto:"
         ]
 
-        for i, step in enumerate(self.steps):
-            report_lines.append(f"\n[PASSO {i+1}]: {step.operation}")
-            report_lines.append(f"  - Descrição..: {step.description}")
-            report_lines.append(f"  - Estado Antes: {str(step.before)}")
-            report_lines.append(f"  - Estado Depois: {str(step.after)}")
-            if step.explanation:
-                report_lines.append(f"  - Justificativa: {step.explanation}")
+        if self.warnings:
+            report_lines.append("\n⚠️ AVISOS:")
+            for warning in self.warnings:
+                report_lines.append(f"  - {warning}")
+
+        if self.steps:
+            report_lines.append("\nA seguir, a sequência de operações que levaram ao estado atual do objeto:")
+
+            for i, step in enumerate(self.steps):
+                report_lines.append(f"\n[PASSO {i+1}]: {step.operation}")
+                if step.context_object:
+                    report_lines.append(f"  - Contexto...: {str(step.context_object)}")
+                report_lines.append(f"  - Descrição..: {step.description}")
+                report_lines.append(f"  - Estado Antes: {str(step.before)}")
+                report_lines.append(f"  - Estado Depois: {str(step.after)}")
+                if step.explanation:
+                    report_lines.append(f"  - Justificativa: {step.explanation}")
 
         report_lines.append("\n==================================================")
         return "\n".join(report_lines)
