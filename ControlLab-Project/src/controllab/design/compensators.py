@@ -467,6 +467,55 @@ def design_pid_tuning(plant: SymbolicTransferFunction,
     
     return result
 
+def decompose_pid_controller(controller: SymbolicTransferFunction) -> Tuple[float, float, float]:
+    """
+    Decompõe uma função de transferência em seus componentes PID.
+
+    Args:
+        controller (SymbolicTransferFunction): A função de transferência do controlador.
+
+    Returns:
+        Tuple[float, float, float]: Uma tupla contendo os ganhos (Kp, Ki, Kd).
+    """
+    s = controller.variable
+    num = controller.numerator
+    den = controller.denominator
+
+    # Garante que o denominador é um polinômio em s
+    if not den.is_polynomial(s):
+        raise ValueError(f"Denominador '{den}' não é um polinômio válido em {s}")
+
+    # Garante que o numerador é um polinômio em s
+    if not num.is_polynomial(s):
+        raise ValueError(f"Numerador '{num}' não é um polinômio válido em {s}")
+
+    # Controlador na forma P, PI, PD, PID
+    if den.equals(1):  # P, PD
+        p_num = sp.Poly(num, s)
+        coeffs = p_num.all_coeffs()
+        if len(coeffs) == 1:  # P
+            return coeffs[0], 0, 0
+        elif len(coeffs) == 2:  # PD
+            return coeffs[1], 0, coeffs[0]
+        else:
+            raise ValueError("Não é um controlador P ou PD válido")
+
+    elif den.equals(s):  # I, PI, PID
+        p_num = sp.Poly(num, s)
+        coeffs = p_num.all_coeffs()
+        if len(coeffs) == 1:  # I
+            return 0, coeffs[0], 0
+        elif len(coeffs) == 2:  # PI
+            return coeffs[0], coeffs[1], 0
+        elif len(coeffs) == 3:  # PID
+            return coeffs[1], coeffs[2], coeffs[0]
+        else:
+            raise ValueError("Não é um controlador I, PI ou PID válido")
+
+    else:
+        raise ValueError(f"Denominador '{den}' não é válido para um controlador PID padrão")
+
+
 def design_by_root_locus(plant: SymbolicTransferFunction,
                         desired_poles: List[complex],
                         show_steps: bool = True) -> ControllerResult:
