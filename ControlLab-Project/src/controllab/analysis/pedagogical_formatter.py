@@ -1,45 +1,39 @@
-from controllab.analysis.routh_hurwitz import StabilityResult, RouthAnalysisHistory
+import sympy as sp
+# Importe as classes de dados que você vai receber
+from .routh_hurwitz import StabilityResult, RouthAnalysisHistory
 
-def format_routh_hurwitz_response(result: StabilityResult, history: RouthAnalysisHistory) -> dict:
+def format_routh_hurwitz_response(
+    stability_result: StabilityResult,
+    history: RouthAnalysisHistory,
+    polynomial: sp.Expr
+) -> dict:
     """
-    Formats the Routh-Hurwitz analysis result into a pedagogical JSON response.
-
-    Args:
-        result: The stability result from the Routh-Hurwitz analysis.
-        history: The history of the Routh-Hurwitz analysis.
-
-    Returns:
-        A dictionary containing the pedagogical response.
+    Recebe os resultados brutos da análise de Routh-Hurwitz e os traduz
+    em uma resposta pedagógica estruturada em JSON.
     """
+    pedagogical_steps = []
+
+    # Passo 1: Polinômio Inicial (usando o dado bruto 'polynomial')
+    pedagogical_steps.append({
+        "title": "1. Polinômio Característico",
+        "explanation": "A estabilidade do sistema é determinada pelas raízes do polinômio característico.",
+        "data": {"polynomial_latex": sp.latex(polynomial) + " = 0"}
+    })
+
+    # Passo 2: Construção da Tabela (usando o dado bruto 'history')
+    table_step = next((s for s in history.steps if s['type'] == "TABELA_COMPLETA"), None)
+    if table_step:
+        pedagogical_steps.append({
+            "title": "3. Construção da Tabela de Routh",
+            "explanation": "A tabela de Routh é um arranjo sistemático dos coeficientes.",
+            "data": {"routh_table": [[str(item) for item in row] for row in table_step['data'].array]}
+        })
+
+    # Estrutura final (usando o dado bruto 'stability_result')
     response = {
-        "title": "Análise de Estabilidade de Routh-Hurwitz",
-        "polynomial": str(history.polynomial),
-        "steps": [],
-        "special_cases": [],
-        "conclusion": {}
-    }
-
-    for step in history.steps:
-        response["steps"].append({
-            "step": step['step'],
-            "type": step['type'],
-            "description": step['description'],
-            "data": str(step['data']),
-            "explanation": step['explanation']
-        })
-
-    for case in history.special_cases:
-        response["special_cases"].append({
-            "type": case['type'],
-            "row": case['row'],
-            "treatment": case['treatment'],
-            "result": str(case['result'])
-        })
-
-    response["conclusion"] = {
-        "is_stable": result.is_stable,
-        "unstable_poles_count": result.unstable_poles_count,
-        "summary": history.stability_conclusion
+        "conclusion": stability_result.is_stable,
+        "summary": f"O sistema é {'estável' if stability_result.is_stable else 'instável'} com {stability_result.sign_changes} trocas de sinal.",
+        "steps": pedagogical_steps
     }
 
     return response

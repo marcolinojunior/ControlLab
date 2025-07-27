@@ -250,7 +250,7 @@ class RouthHurwitzAnalyzer:
             self.history.add_step(
                 "TABELA_COMPLETA",
                 "Tabela de Routh construída completamente",
-                routh_obj.display_array(),
+                routh_obj,
                 "Todas as linhas calculadas usando fórmula de Routh"
             )
             
@@ -359,6 +359,16 @@ class RouthHurwitzAnalyzer:
             
         return new_row
     
+    def analyze(self, polynomial: sp.Expr, variable: str = 's', show_steps: bool = True) -> tuple:
+        """
+        Executa a análise de Routh-Hurwitz e retorna os resultados brutos.
+        """
+        routh_array_obj = self.build_routh_array(polynomial, variable, show_steps)
+        stability_result = self.analyze_stability(routh_array_obj, show_steps)
+
+        # AÇÃO: Retorne os objetos de dados puros, não o dicionário formatado.
+        return stability_result, self.history, polynomial
+
     def analyze_stability(self, routh_obj: RouthArray, show_steps: bool = True) -> StabilityResult:
         """
         Analisa a estabilidade baseada na tabela de Routh
@@ -556,11 +566,10 @@ def build_routh_array(polynomial, variable='s', show_steps: bool = True) -> Rout
     return analyzer.build_routh_array(polynomial, variable, show_steps)
 
 
-def analyze_stability(polynomial, variable='s', show_steps: bool = True) -> StabilityResult:
+def analyze_stability(polynomial, variable='s', show_steps: bool = True) -> tuple:
     """Função wrapper para análise completa de estabilidade"""
     analyzer = RouthHurwitzAnalyzer()
-    routh_obj = analyzer.build_routh_array(polynomial, variable, show_steps)
-    return analyzer.analyze_stability(routh_obj, show_steps)
+    return analyzer.analyze(polynomial, variable, show_steps)
 
 
 def handle_zero_in_first_column(array, row_index):
