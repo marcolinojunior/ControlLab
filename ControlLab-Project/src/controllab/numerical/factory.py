@@ -37,6 +37,26 @@ class NumericalSystemFactory:
         self._cache = {}
         self._cache_size = cache_size
     
+    def create_from_symbolic(self, symbolic_tf: SymbolicTransferFunction):
+        num_symbols = symbolic_tf.numerator.free_symbols
+        den_symbols = symbolic_tf.denominator.free_symbols
+        free_symbols = num_symbols.union(den_symbols)
+        free_symbols.discard(symbolic_tf.variable) # Remove a variável principal, 's'
+
+        if free_symbols:
+            history_report = symbolic_tf.history.get_formatted_report()
+            error_message = (
+                f"FALHA NA CONVERSÃO SIMBÓLICO->NUMÉRICO: A expressão ainda contém parâmetros simbólicos.\n\n"
+                f"--> SÍMBOLOS NÃO RESOLVIDOS ENCONTRADOS: {free_symbols}\n\n"
+                f"--> HISTÓRICO DO OBJETO:\n{history_report}\n\n"
+                f"--> AÇÃO RECOMENDADA:\n"
+                f"    Use o método `.subs({{simbolo: valor_numerico}})` na sua função de transferência para substituir todos os parâmetros por valores numéricos antes de tentar a conversão."
+            )
+            raise ValueError(error_message)
+
+        # ... (continua com a extração de coeficientes e conversão)
+        return self.create_tf_system(symbolic_tf)
+
     def create_tf_system(self, symbolic_tf: SymbolicTransferFunction,
                         substitutions: Optional[Dict] = None) -> Any:
         """
