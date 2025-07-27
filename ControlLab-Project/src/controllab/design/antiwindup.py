@@ -95,21 +95,13 @@ def design_antiwindup_compensation(controller: SymbolicTransferFunction,
         # Tenta executar a operação crítica
         kp, ki, kd = decompose_pid_controller(controller)
     except ValueError as e:
-        # A OPERAÇÃO FALHOU! HORA DE INVESTIGAR.
-        # 1. Obter o laudo pericial do objeto
         history_report = controller.history.get_formatted_report()
-
-        # 2. Formular uma mensagem de erro que é um guia de depuração
         error_message = (
             f"FALHA NO PROJETO ANTI-WINDUP: O controlador fornecido não é um PID válido.\n\n"
-            f"--> MOTIVO TÉCNICO DA FALHA:\n"
-            f"    {e}\n\n"
-            f"--> DIAGNÓSTICO DA CAUSA RAIZ (baseado na história do controlador):\n"
-            f"{history_report}\n\n"
-            f"--> AÇÃO RECOMENDADA:\n"
-            f"    Analise o relatório acima, especialmente o passo de 'Criação do Objeto'. O erro que vimos no teste foi causado por uma definição incorreta do controlador PI, resultando em um denominador s**2. Verifique a construção do seu objeto."
+            f"--> MOTIVO TÉCNICO: {e}\n\n"
+            f"--> DIAGNÓSTICO (Histórico do Objeto):\n{history_report}\n\n"
+            f"--> AÇÃO RECOMENDADA: Verifique a criação do seu controlador. O erro comum é usar um denominador extra, resultando em s**2."
         )
-        # 3. Lançar o novo erro, rico em contexto
         raise ValueError(error_message) from e
 
     if method == 'back_calculation':

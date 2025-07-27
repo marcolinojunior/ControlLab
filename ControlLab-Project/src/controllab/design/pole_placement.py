@@ -305,12 +305,8 @@ class StateSpaceController:
 
         if rank != n:
             error_message = (
-                f"FALHA NA ALOCAÇÃO DE POLOS: O sistema não é controlável.\n\n"
-                f"--> DIAGNÓSTICO TÉCNICO:\n"
-                f"    A matriz de controlabilidade deve ter posto completo (rank={n}), mas o posto calculado foi {rank}.\n\n"
-                f"--> MATRIZ DE CONTROLABILIDADE CALCULADA:\n{controllability_matrix}\n\n"
-                f"--> AÇÃO RECOMENDADA:\n"
-                f"    Revise as matrizes A e B do seu modelo. Pode haver estados dinâmicos que não são afetados pela entrada de controle."
+                f"FALHA NA ALOCAÇÃO DE POLOS: O sistema não é controlável (posto da matriz de controlabilidade é {rank}, mas deveria ser {n}).\n\n"
+                f"--> DIAGNÓSTICO: A alocação de polos requer que todos os estados do sistema sejam influenciados pela entrada. Revise as matrizes A e B do seu modelo."
             )
             raise np.linalg.LinAlgError(error_message)
 

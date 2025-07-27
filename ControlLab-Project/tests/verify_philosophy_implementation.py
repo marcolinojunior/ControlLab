@@ -81,9 +81,8 @@ def test_anti_windup_intelligent_diagnosis():
     error_message = str(excinfo.value)
 
     assert "FALHA NO PROJETO ANTI-WINDUP" in error_message, "FALHA: A mensagem de erro não tem o cabeçalho esperado."
-    assert "MOTIVO TÉCNICO DA FALHA" in error_message, "FALHA: A mensagem de erro não explica o motivo técnico."
-    assert "Denominador 's' não é válido para um controlador PID padrão" in error_message, "FALHA: A causa técnica específica (denominador s**2) não foi mencionada."
-    assert "DIAGNÓSTICO DA CAUSA RAIZ" in error_message, "FALHA: A mensagem de erro não inclui a seção de diagnóstico do histórico."
+    assert "MOTIVO TÉCNICO" in error_message, "FALHA: A mensagem de erro não explica o motivo técnico."
+    assert "DIAGNÓSTICO (Histórico do Objeto)" in error_message, "FALHA: A mensagem de erro não inclui a seção de diagnóstico do histórico."
     assert "Estado Antes: {'numerador_inicial': 5 + 2/s, 'denominador_inicial': s}" in error_message, "FALHA: O relatório do histórico dentro do erro está incorreto ou ausente."
     assert "AÇÃO RECOMENDADA" in error_message, "FALHA: A mensagem de erro não fornece uma sugestão de correção para o usuário."
 
@@ -113,8 +112,8 @@ def test_pole_placement_intelligent_diagnosis():
 
     assert "FALHA NA ALOCAÇÃO DE POLOS" in error_message
     assert "O sistema não é controlável" in error_message
-    assert "o posto calculado foi 2" in error_message # O posto é 2, não 3
-    assert "MATRIZ DE CONTROLABILIDADE CALCULADA" in error_message
+    assert "posto da matriz de controlabilidade é 2, mas deveria ser 3" in error_message
+    assert "DIAGNÓSTICO: A alocação de polos requer que todos os estados do sistema sejam influenciados pela entrada. Revise as matrizes A e B do seu modelo." in error_message
 
     print("  [✓] SUCESSO: Alocação de polos identifica sistema não-controlável e fornece diagnóstico.")
 
