@@ -102,7 +102,7 @@ class SymbolicTransferFunction:
         result = SymbolicTransferFunction(new_numerator, new_denominator, self.variable)
 
         # Combina históricos
-        result.history.steps = self.history.steps.copy()
+        result.history.steps = list(self.history.steps)
         result.history.steps.extend(other.history.steps)
         result.history.add_step(
             operation="Multiplicação",
@@ -141,7 +141,7 @@ class SymbolicTransferFunction:
         result = SymbolicTransferFunction(new_numerator, new_denominator, self.variable)
 
         # Combina históricos
-        result.history.steps = self.history.steps.copy()
+        result.history.steps = list(self.history.steps)
         result.history.steps.extend(other.history.steps)
         result.history.add_step(
             operation="Adição",
@@ -185,7 +185,7 @@ class SymbolicTransferFunction:
         result = SymbolicTransferFunction(new_numerator, new_denominator, self.variable)
 
         # Combina históricos
-        result.history.steps = self.history.steps.copy()
+        result.history.steps = list(self.history.steps)
         result.history.steps.extend(other.history.steps)
         result.history.add_step(
             operation="Divisão",
@@ -310,20 +310,20 @@ class SymbolicTransferFunction:
         closed_loop_num = G.numerator * H.denominator
         closed_loop_den = G.denominator * H.denominator - sign * G.numerator * H.numerator
 
-        simplified_tf = SymbolicTransferFunction(closed_loop_num, closed_loop_den, self.variable).simplify()
+        new_tf = SymbolicTransferFunction(closed_loop_num, closed_loop_den, self.variable)
 
-        simplified_tf.history.steps = list(self.history.steps)
+        new_tf.history.steps = list(self.history.steps)
         if H.history:
-            simplified_tf.history.steps.extend(H.history.steps)
+            new_tf.history.steps.extend(H.history.steps)
 
-        simplified_tf.history.add_step(
+        new_tf.history.add_step(
             operation="Realimentação",
             description=f"Cálculo da malha fechada com H(s) = {H} e sinal {sign}",
             before=self,
-            after=simplified_tf,
+            after=new_tf,
             explanation="A função de transferência de malha fechada foi calculada usando a fórmula G/(1+GH)."
         )
-        return simplified_tf
+        return new_tf
 
     def partial_fractions(self) -> sp.Expr:
         """

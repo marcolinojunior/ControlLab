@@ -95,29 +95,10 @@ def design_antiwindup_compensation(controller: SymbolicTransferFunction,
         # Tenta executar a operação crítica
         kp, ki, kd = decompose_pid_controller(controller)
 
-    except ValueError as e:
-        # A OPERAÇÃO FALHOU! HORA DE INVESTIGAR.
-        # 1. Obter o laudo pericial do objeto
-        history_report = controller.history.get_formatted_report()
-
-        # 2. Formular uma mensagem de erro que é um guia de depuração
-        error_message = (
-            f"FALHA NO PROJETO ANTI-WINDUP: O controlador fornecido não é um PID válido.\n\n"
-            f"--> MOTIVO TÉCNICO DA FALHA:\n"
-            f"    {e}\n\n"
-            f"--> DIAGNÓSTICO DA CAUSA RAIZ (baseado na história do controlador):\n"
-            f"{history_report}\n\n"
-            f"--> AÇÃO RECOMENDADA:\n"
-            f"    Analise o relatório acima, especialmente o passo de 'Criação do Objeto'. O erro que vimos no teste foi causado por uma definição incorreta do controlador PI, resultando em um denominador s**2. Verifique a construção do seu objeto."
-        )
-        # 3. Lançar o novo erro, rico em contexto
-        raise ValueError(error_message) from e
-
-    try:
         if method == 'back_calculation':
-            result = design_back_calculation(controller, plant, saturation_limits, result)
+            result = design_back_calculation(controller, plant, saturation_limits, result, kp, ki, kd)
         elif method == 'conditional_integration':
-            result = design_conditional_integration(controller, plant, saturation_limits, result)
+            result = design_conditional_integration(controller, plant, saturation_limits, result, kp, ki, kd)
         elif method == 'observer_based':
             result = design_observer_based_antiwindup(controller, plant, saturation_limits, result)
         else:
@@ -141,10 +122,23 @@ def design_antiwindup_compensation(controller: SymbolicTransferFunction,
         for rec in result.analysis:
             print(f"   {rec}")
 
-    except Exception as e:
-        print(f"❌ Erro no projeto: {e}")
-        result.analysis.append(f"❌ Erro: {e}")
-        result.antiwindup_controller = controller  # Retorna controlador original
+    except ValueError as e:
+        # A OPERAÇÃO FALHOU! HORA DE INVESTIGAR.
+        # 1. Obter o laudo pericial do objeto
+        history_report = controller.history.get_formatted_report()
+
+        # 2. Formular uma mensagem de erro que é um guia de depuração
+        error_message = (
+            f"FALHA NO PROJETO ANTI-WINDUP: O controlador fornecido não é um PID válido.\n\n"
+            f"--> MOTIVO TÉCNICO DA FALHA:\n"
+            f"    {e}\n\n"
+            f"--> DIAGNÓSTICO DA CAUSA RAIZ (baseado na história do controlador):\n"
+            f"{history_report}\n\n"
+            f"--> AÇÃO RECOMENDADA:\n"
+            f"    Analise o relatório acima, especialmente o passo de 'Criação do Objeto'. O erro que vimos no teste foi causado por uma definição incorreta do controlador PI, resultando em um denominador s**2. Verifique a construção do seu objeto."
+        )
+        # 3. Lançar o novo erro, rico em contexto
+        raise ValueError(error_message) from e
 
     return result
 
@@ -159,17 +153,16 @@ def has_integral_action(controller: SymbolicTransferFunction) -> bool:
         bool: True se tem ação integral
     """
     try:
-        s = sp.Symbol('s')
-
-        # Verificar se tem 1/s no numerador ou denominador com ordem menor
-        return 1/s in sp.apart(controller.numerator/controller.denominator, s).args
+        poles = controller.poles()
+        return 0 in poles
     except:
         return False
 
 def design_back_calculation(controller: SymbolicTransferFunction,
                           plant: SymbolicTransferFunction,
                           saturation_limits: SaturationLimits,
-                          result: AntiWindupResult) -> AntiWindupResult:
+                          result: AntiWindupResult,
+                          kp, ki, kd) -> AntiWindupResult:
     """
     Projeta anti-windup por back-calculation
 
@@ -188,9 +181,6 @@ def design_back_calculation(controller: SymbolicTransferFunction,
     s = sp.Symbol('s')
 
     try:
-        # Decompor controlador em partes P, I, D
-        kp, ki, kd = decompose_pid_controller(controller)
-
         if ki == 0:
             result.analysis.append("⚠️ Controlador sem ação integral - back-calculation não aplicável")
             result.antiwindup_controller = controller
@@ -260,7 +250,8 @@ def design_back_calculation(controller: SymbolicTransferFunction,
 def design_conditional_integration(controller: SymbolicTransferFunction,
                                  plant: SymbolicTransferFunction,
                                  saturation_limits: SaturationLimits,
-                                 result: AntiWindupResult) -> AntiWindupResult:
+                                 result: AntiWindupResult,
+                                 kp, ki, kd) -> AntiWindupResult:
     """
     Projeta anti-windup por integração condicional
 
@@ -279,9 +270,6 @@ def design_conditional_integration(controller: SymbolicTransferFunction,
     s = sp.Symbol('s')
 
     try:
-        # Decompor controlador
-        kp, ki, kd = decompose_pid_controller(controller)
-
         if ki == 0:
             result.analysis.append("⚠️ Controlador sem ação integral - integração condicional não aplicável")
             result.antiwindup_controller = controller
