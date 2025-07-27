@@ -94,34 +94,6 @@ def design_antiwindup_compensation(controller: SymbolicTransferFunction,
     try:
         # Tenta executar a operação crítica
         kp, ki, kd = decompose_pid_controller(controller)
-
-        if method == 'back_calculation':
-            result = design_back_calculation(controller, plant, saturation_limits, result, kp, ki, kd)
-        elif method == 'conditional_integration':
-            result = design_conditional_integration(controller, plant, saturation_limits, result, kp, ki, kd)
-        elif method == 'observer_based':
-            result = design_observer_based_antiwindup(controller, plant, saturation_limits, result)
-        else:
-            raise ValueError(f"Método desconhecido: {method}")
-
-        # Análise de performance
-        result.performance_improvement = analyze_antiwindup_performance(
-            result.original_controller,
-            result.antiwindup_controller,
-            plant,
-            saturation_limits,
-            reference_amplitude
-        )
-
-        print("\n📊 ANÁLISE DE PERFORMANCE:")
-        for metric, improvement in result.performance_improvement.items():
-            sign = "⬆️" if improvement > 0 else "⬇️" if improvement < 0 else "➡️"
-            print(f"   {sign} {metric}: {improvement:+.1f}%")
-
-        print("\n💡 RECOMENDAÇÕES:")
-        for rec in result.analysis:
-            print(f"   {rec}")
-
     except ValueError as e:
         # A OPERAÇÃO FALHOU! HORA DE INVESTIGAR.
         # 1. Obter o laudo pericial do objeto
@@ -139,6 +111,33 @@ def design_antiwindup_compensation(controller: SymbolicTransferFunction,
         )
         # 3. Lançar o novo erro, rico em contexto
         raise ValueError(error_message) from e
+
+    if method == 'back_calculation':
+        result = design_back_calculation(controller, plant, saturation_limits, result, kp, ki, kd)
+    elif method == 'conditional_integration':
+        result = design_conditional_integration(controller, plant, saturation_limits, result, kp, ki, kd)
+    elif method == 'observer_based':
+        result = design_observer_based_antiwindup(controller, plant, saturation_limits, result)
+    else:
+        raise ValueError(f"Método desconhecido: {method}")
+
+    # Análise de performance
+    result.performance_improvement = analyze_antiwindup_performance(
+        result.original_controller,
+        result.antiwindup_controller,
+        plant,
+        saturation_limits,
+        reference_amplitude
+    )
+
+    print("\n📊 ANÁLISE DE PERFORMANCE:")
+    for metric, improvement in result.performance_improvement.items():
+        sign = "⬆️" if improvement > 0 else "⬇️" if improvement < 0 else "➡️"
+        print(f"   {sign} {metric}: {improvement:+.1f}%")
+
+    print("\n💡 RECOMENDAÇÕES:")
+    for rec in result.analysis:
+        print(f"   {rec}")
 
     return result
 

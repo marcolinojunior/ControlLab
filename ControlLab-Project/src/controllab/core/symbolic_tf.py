@@ -49,7 +49,7 @@ class SymbolicTransferFunction:
         self.history = OperationHistory()
         self.history.add_step(
             operation="Criação do Objeto",
-            description="Instância de SymbolicTransferFunction foi criada.",
+            description=f"Criação a partir de Numerador: {numerator} e Denominador: {denominator}",
             before={"numerador_inicial": numerator, "denominador_inicial": denominator},
             after=self,
             explanation="As expressões de entrada foram simplificadas e armazenadas."
