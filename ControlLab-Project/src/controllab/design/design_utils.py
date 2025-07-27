@@ -203,47 +203,37 @@ def validate_closed_loop_stability(
     return is_stable, analysis
 
 def calculate_performance_metrics(
-    closed_loop: SymbolicTransferFunction,
+    closed_loop_system: SymbolicTransferFunction,
     specifications: Optional[DesignSpecifications] = None
 ) -> Tuple[Dict[str, float], SymbolicTransferFunction]:
     """
-    Calcula métricas de desempenho do sistema
-
-    Args:
-        closed_loop: Sistema em malha fechada
-        specifications: Especificações de projeto
-
-    Returns:
-        Tuple[Dict[str, float], SymbolicTransferFunction]: Métricas calculadas e o objeto closed_loop modificado
+    Calcula métricas e adiciona um aviso ao histórico se a aproximação
+    de 2ª ordem não for válida.
     """
-    metrics = {}
+    # --- LÓGICA CORRIGIDA ---
 
-    # --- INÍCIO DA MODIFICAÇÃO ---
+    # 1. Chama a função de verificação para obter o resultado.
+    is_valid, warning_message, dominant_poles = verify_second_order_approximation(closed_loop_system)
 
-    # 1. Chama a nova função de verificação
-    is_valid, warning_message, dominant_poles = verify_second_order_approximation(closed_loop)
-
-    # 2. Se a aproximação NÃO for válida, adiciona o aviso ao histórico do objeto
+    # 2. Se a verificação falhar, usa o novo método para adicionar o aviso ao histórico.
     if not is_valid:
-        closed_loop.history.add_step(
-            operation="Aviso de Análise",
-            description="Validação da aproximação de segunda ordem.",
-            before=closed_loop,
-            after=closed_loop, # O objeto não muda, apenas recebe um aviso
-            explanation=warning_message
+        closed_loop_system.history.add_warning(
+            source_function="calculate_performance_metrics",
+            message=warning_message,
+            context={"system_poles": closed_loop_system.poles(), "system_zeros": closed_loop_system.zeros()}
         )
 
-    # 3. Continua o cálculo das métricas...
-    # A lógica para calcular overshoot, etc., pode agora usar os 'dominant_poles'
-    # retornados pela função de verificação, sabendo que são os corretos.
+    # 3. Prossiga com os cálculos, usando os 'dominant_poles' retornados
+    # para calcular overshoot, etc., com base na aproximação.
+    # Mesmo que a aproximação seja inválida, ainda podemos calcular o valor
+    # teórico, e o 'warning' no histórico informará ao usuário que o valor
+    # pode não corresponder à simulação real.
 
-    # ... (resto da lógica para calcular overshoot, settling time, etc.)
-
-    # --- FIM DA MODIFICAÇÃO ---
+    metrics = {}
 
     try:
         # Obter polos do sistema
-        poles = closed_loop.get_poles()
+        poles = closed_loop_system.get_poles()
 
         if poles:
             if dominant_poles:
@@ -280,7 +270,7 @@ def calculate_performance_metrics(
         s = sp.Symbol('s')
         try:
             # Para entrada degrau unitário
-            steady_state_error = 1 - sp.limit(closed_loop.expression, s, 0)
+            steady_state_error = 1 - sp.limit(closed_loop_system.expression, s, 0)
             if steady_state_error.is_real:
                 metrics['steady_state_error_step'] = float(steady_state_error)
         except:
@@ -289,7 +279,7 @@ def calculate_performance_metrics(
     except Exception as e:
         metrics['calculation_error'] = str(e)
 
-    return metrics, closed_loop
+    return metrics, closed_loop_system
 
 def create_educational_content(method: str, parameters: Dict[str, Any]) -> List[str]:
     """

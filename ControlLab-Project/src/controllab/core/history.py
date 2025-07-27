@@ -43,9 +43,14 @@ class OperationHistory:
         if len(self.steps) > self.max_steps:
             self.steps.pop(0)
 
-    def add_warning(self, warning: str):
-        """Adiciona um aviso ao histórico"""
-        self.warnings.append(warning)
+    def add_warning(self, source_function: str, message: str, context: Optional[Dict] = None):
+        """Adiciona um aviso não-crítico ao histórico do objeto."""
+        warning_entry = {
+            "source": source_function,
+            "message": message,
+            "context": context if context else {}
+        }
+        self.warnings.append(warning_entry)
 
     def get_formatted_report(self) -> str:
         """
