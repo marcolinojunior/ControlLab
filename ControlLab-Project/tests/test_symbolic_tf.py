@@ -54,22 +54,32 @@ class TestSymbolicTransferFunction:
         assert sp.simplify(G.numerator - expected_num) == 0
         assert sp.simplify(G.denominator - expected_den) == 0
 
-    def test_substitute_param(self):
-        """Teste de substituição de um único parâmetro"""
-        tf = SymbolicTransferFunction(self.K, self.T * self.s + 1)
+    def test_substitute_param_with_history(self):
+        """Testa a substituição de parâmetros e o rastreamento de histórico."""
+        s = sp.Symbol('s')
+        K = sp.Symbol('K')
 
-        # Substitui K por 2
-        tf_sub = tf.substitute_param(self.K, 2)
+        # Sistema original com um parâmetro K
+        original_tf = SymbolicTransferFunction(K, s + K, s)
 
-        assert tf_sub.numerator == 2
-        assert tf_sub.denominator == self.T * self.s + 1
+        # Executa a substituição
+        numeric_tf = original_tf.substitute_param(K, 10.5)
 
-        # Verifica o histórico
-        assert len(tf_sub.history.steps) > 1
-        last_step = tf_sub.history.steps[-1]
+        # 1. Verificar se a substituição está correta
+        expected_num = sp.Float(10.5)
+        expected_den = s + 10.5
+        assert numeric_tf.numerator.equals(expected_num)
+        assert numeric_tf.denominator.equals(expected_den)
+
+        # 2. Verificar se o objeto original não foi modificado (imutabilidade)
+        assert original_tf.numerator.equals(K)
+        assert original_tf.denominator.equals(s + K)
+
+        # 3. Verificar se o histórico foi registado corretamente no NOVO objeto
+        last_step = numeric_tf.history.get_last_step()
+        assert last_step is not None
         assert last_step.operation == "Substituição de Parâmetro"
-        assert str(self.K) in last_step.description
-        assert "2" in last_step.description
+        assert "símbolo 'K' foi substituído pelo valor '10.5'" in last_step.description
 
     def test_addition(self):
         """Teste de adição de funções de transferência"""

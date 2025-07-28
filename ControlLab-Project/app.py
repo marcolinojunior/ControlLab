@@ -1,16 +1,27 @@
 from flask import Flask, request, jsonify
-from src.controllab.core import SymbolicTransferFunction
+from src.controllab.core.symbolic_tf import SymbolicTransferFunction
+from src.controllab.numerical.factory import NumericalSystemFactory
+from src.controllab.numerical.simulation import simulate_system_response
 import sympy as sp
 import numpy as np
 
-# Placeholder for analysis functions
-def run_step_response_analysis(tf):
-    # In a real implementation, this would call the actual analysis function
-    # and return data formatted for plotting.
-    # For now, we'll just return a simple dictionary.
-    return {"time": np.linspace(0, 10, 100).tolist(), "response": np.random.rand(100).tolist()}
-
 app = Flask(__name__)
+
+def run_step_response_analysis(tf_symbolic):
+    """
+    Usa o pipeline completo do ControlLab para converter um sistema simbólico
+    para numérico e calcular a sua resposta ao degrau.
+    """
+    # 1. Usa a nossa "fábrica" para criar um sistema numérico
+    factory = NumericalSystemFactory()
+    numeric_sys = factory.create_from_symbolic(tf_symbolic)
+
+    # 2. Usa o nosso simulador para obter a resposta
+    # (Assumindo que simulate_system_response retorna tempo e resposta)
+    time, response = simulate_system_response(numeric_sys, input_type="step")
+
+    # 3. Formata a saída para JSON
+    return {"time": time.tolist(), "response": response.tolist()}
 
 @app.route('/api/recalculate_analysis', methods=['POST'])
 def recalculate_analysis():
@@ -25,17 +36,18 @@ def recalculate_analysis():
         return jsonify({"error": "Missing required parameters"}), 400
 
     try:
-        # Create symbolic transfer function from string
         s = sp.symbols('s')
         K = sp.symbols(param_name_str)
 
-        # This is a simplified way to create the transfer function from a string.
-        # A more robust solution would be needed for complex expressions.
-        num, den = system_definition_str.split('/')
-        num_expr = sp.sympify(num, locals={'s': s, param_name_str: K})
-        den_expr = sp.sympify(den, locals={'s': s, param_name_str: K})
+        # 1. Converte a string inteira numa única expressão SymPy.
+        #    O sympify é inteligente o suficiente para lidar com parênteses e operadores.
+        full_expr = sp.sympify(system_definition_str, locals={'s': s, param_name_str: K})
 
-        tf = SymbolicTransferFunction(num_expr, den_expr)
+        # 2. Usa o SymPy para extrair o numerador e o denominador de forma segura.
+        #    Este é o método à prova de falhas.
+        num_expr, den_expr = full_expr.as_numer_den()
+
+        tf = SymbolicTransferFunction(num_expr, den_expr, s)
 
         # Substitute the parameter
         tf_numeric = tf.substitute_param(K, float(param_value))
