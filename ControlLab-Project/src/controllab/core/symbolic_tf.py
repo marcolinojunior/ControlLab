@@ -558,39 +558,43 @@ class SymbolicTransferFunction:
     def from_numeric(cls, numeric_tf, variable: str = 's'):
         """
         Cria uma instância de SymbolicTransferFunction a partir de um objeto
-        numérico, como um control.TransferFunction.
-
-        Args:
-            numeric_tf: O objeto de função de transferência numérico.
-            variable: A variável simbólica a ser usada (padrão: 's').
-
-        Returns:
-            Uma nova instância de SymbolicTransferFunction.
+        numérico, como um control.TransferFunction, de forma robusta e com
+        rastreamento de histórico.
         """
-        # 1. Validação de Dependência e Input
+        # 1. Validação de Dependência e Input (A sua implementação disto está correta)
         if control is None:
             raise ImportError("A biblioteca 'python-control' é necessária para usar from_numeric.")
-
         if not isinstance(numeric_tf, control.TransferFunction):
             raise TypeError(f"O input deve ser do tipo 'control.TransferFunction', mas foi recebido {type(numeric_tf)}.")
-
-        # 2. Validação de Escopo (SISO)
-        if numeric_tf.issiso() is False:
+        if not numeric_tf.issiso():
             raise NotImplementedError("A conversão de sistemas MIMO ainda não é suportada.")
 
-        # 3. Extração dos Coeficientes Numéricos
-        # A biblioteca 'control' armazena os coeficientes como listas de arrays 2D.
-        # Para SISO, extraímos o primeiro (e único) elemento.
+        # --- LÓGICA CORRIGIDA E REFINADA ---
+
+        # 2. Extração Robusta dos Coeficientes
+        # np.squeeze remove todos os eixos de dimensão 1, garantindo que obtemos um array 1D.
         num_coeffs = np.squeeze(numeric_tf.num).tolist()
         den_coeffs = np.squeeze(numeric_tf.den).tolist()
 
-        # 4. Conversão para Polinômios Simbólicos
+        # Garante que, mesmo para um ganho puro, tenhamos uma lista.
+        if not isinstance(num_coeffs, list): num_coeffs = [num_coeffs]
+        if not isinstance(den_coeffs, list): den_coeffs = [den_coeffs]
+
+        # 3. Conversão para Polinômios Simbólicos
         s = sp.symbols(variable)
         numerator_poly = sp.Poly(num_coeffs, s).as_expr()
         denominator_poly = sp.Poly(den_coeffs, s).as_expr()
 
-        # 5. Criação e Retorno da Nova Instância
-        return cls(numerator_poly, denominator_poly, variable=s)
+        # 4. Criação da Nova Instância
+        new_instance = cls(numerator_poly, denominator_poly, variable=s)
+
+        # 5. Omissão Crítica Corrigida: Adicionar ao Histórico
+        # Modificamos o primeiro passo do histórico para refletir a origem numérica.
+        new_instance.history.steps[0].operation = "Criação a partir de Objeto Numérico"
+        new_instance.history.steps[0].description = f"Importado de um objeto {type(numeric_tf).__name__}."
+        new_instance.history.steps[0].before = {"numeric_object": str(numeric_tf)}
+
+        return new_instance
 
     def characteristic_equation(self) -> sp.Expr:
         """

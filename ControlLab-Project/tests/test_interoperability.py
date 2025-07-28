@@ -22,20 +22,20 @@ def test_from_numeric_siso_standard():
     assert symbolic_sys.denominator.equals(expected_den)
 
 def test_from_numeric_pure_gain():
-    """Testa a conversão de um sistema que é apenas um ganho."""
-    numeric_sys = ct.TransferFunction([5], [1]) # G(s) = 5
+    """Testa a conversão de um sistema que é apenas um ganho puro."""
+    numeric_sys = ct.TransferFunction([10.5], [1]) # G(s) = 10.5
 
     symbolic_sys = SymbolicTransferFunction.from_numeric(numeric_sys)
 
-    assert symbolic_sys.numerator.equals(5)
+    assert symbolic_sys.numerator.equals(10.5)
     assert symbolic_sys.denominator.equals(1)
+    # Verifica se o histórico foi registado corretamente
+    assert "Criação a partir de Objeto Numérico" in symbolic_sys.history.steps[0].operation
 
 def test_from_numeric_raises_error_for_mimo():
-    """Testa se a função levanta um erro para sistemas MIMO, como esperado."""
-    # Sistema MIMO 2x2
-    num_mimo = [[[1], [0]], [[0], [1]]]
-    den_mimo = [[[1, 1], [1, 1]], [[1, 1], [1, 1]]]
-    mimo_sys = ct.TransferFunction(num_mimo, den_mimo)
+    """Testa se a função levanta um erro claro para sistemas MIMO."""
+    # Cria um sistema MIMO 2x2 simples
+    mimo_sys = ct.TransferFunction([[[1], [0]], [[0], [1]]], [[[1, 1], [1, 1]], [[1, 1], [1, 1]]])
 
     with pytest.raises(NotImplementedError, match="A conversão de sistemas MIMO ainda não é suportada."):
         SymbolicTransferFunction.from_numeric(mimo_sys)
