@@ -18,3 +18,5 @@ ipython>=7.20.0     # ADICIONADO: Recomendado para a funcionalidade completa de 
 black>=22.0.0
 flake8>=4.0.0
 mypy>=0.900
+
+control>=0.9.4

@@ -15,6 +15,14 @@ from .symbolic_utils import (
     extract_poles_zeros,
     expand_partial_fractions
 )
+import sympy as sp
+import numpy as np
+# Use um try-except para a importação, pois é uma dependência opcional/de desenvolvimento
+try:
+    import control
+except ImportError:
+    control = None
+
 
 class SymbolicTransferFunction:
     """
@@ -545,6 +553,44 @@ class SymbolicTransferFunction:
             }
         except Exception as e:
             return {'error': str(e)}
+
+    @classmethod
+    def from_numeric(cls, numeric_tf, variable: str = 's'):
+        """
+        Cria uma instância de SymbolicTransferFunction a partir de um objeto
+        numérico, como um control.TransferFunction.
+
+        Args:
+            numeric_tf: O objeto de função de transferência numérico.
+            variable: A variável simbólica a ser usada (padrão: 's').
+
+        Returns:
+            Uma nova instância de SymbolicTransferFunction.
+        """
+        # 1. Validação de Dependência e Input
+        if control is None:
+            raise ImportError("A biblioteca 'python-control' é necessária para usar from_numeric.")
+
+        if not isinstance(numeric_tf, control.TransferFunction):
+            raise TypeError(f"O input deve ser do tipo 'control.TransferFunction', mas foi recebido {type(numeric_tf)}.")
+
+        # 2. Validação de Escopo (SISO)
+        if numeric_tf.issiso() is False:
+            raise NotImplementedError("A conversão de sistemas MIMO ainda não é suportada.")
+
+        # 3. Extração dos Coeficientes Numéricos
+        # A biblioteca 'control' armazena os coeficientes como listas de arrays 2D.
+        # Para SISO, extraímos o primeiro (e único) elemento.
+        num_coeffs = np.squeeze(numeric_tf.num).tolist()
+        den_coeffs = np.squeeze(numeric_tf.den).tolist()
+
+        # 4. Conversão para Polinômios Simbólicos
+        s = sp.symbols(variable)
+        numerator_poly = sp.Poly(num_coeffs, s).as_expr()
+        denominator_poly = sp.Poly(den_coeffs, s).as_expr()
+
+        # 5. Criação e Retorno da Nova Instância
+        return cls(numerator_poly, denominator_poly, variable=s)
 
     def characteristic_equation(self) -> sp.Expr:
         """
