@@ -15,14 +15,6 @@ from .symbolic_utils import (
     extract_poles_zeros,
     expand_partial_fractions
 )
-import sympy as sp
-import numpy as np
-# Use um try-except para a importação, pois é uma dependência opcional/de desenvolvimento
-try:
-    import control
-except ImportError:
-    control = None
-
 
 class SymbolicTransferFunction:
     """
@@ -227,23 +219,6 @@ class SymbolicTransferFunction:
             explanation="Fatores comuns entre numerador e denominador podem ter sido cancelados."
         )
         return simplified_tf
-
-    def substitute_param(self, param_symbol, value):
-        new_numerator = self.numerator.subs(param_symbol, value)
-        new_denominator = self.denominator.subs(param_symbol, value)
-
-        new_tf = SymbolicTransferFunction(new_numerator, new_denominator, self.variable)
-
-        new_tf.history.steps = self.history.steps.copy()
-        new_tf.history.add_step(
-            operation="Substituição de Parâmetro",
-            description=f"Substituído o parâmetro {param_symbol} por {value}",
-            before=self,
-            after=new_tf,
-            explanation=f"O símbolo {param_symbol} foi substituído pelo valor {value}."
-        )
-
-        return new_tf
 
     def substitute(self, substitutions: Dict[Symbol, Union[int, float, Symbol]]) -> 'SymbolicTransferFunction':
         """
@@ -570,43 +545,6 @@ class SymbolicTransferFunction:
             }
         except Exception as e:
             return {'error': str(e)}
-
-    @classmethod
-    def from_numeric(cls, numeric_tf, variable: str = 's'):
-        """
-        Cria uma instância de SymbolicTransferFunction a partir de um objeto
-        numérico, como um control.TransferFunction, de forma robusta e com
-        rastreamento de histórico.
-        """
-        # 1. Validação (A sua implementação disto já está boa)
-        if control is None:
-            raise ImportError("A biblioteca 'python-control' é necessária para usar from_numeric.")
-        if not isinstance(numeric_tf, control.TransferFunction):
-            raise TypeError(f"O input deve ser do tipo 'control.TransferFunction', mas foi recebido {type(numeric_tf)}.")
-        if not numeric_tf.issiso():
-            raise NotImplementedError("A conversão de sistemas MIMO ainda não é suportada.")
-
-        # 2. Extração Robusta dos Coeficientes (CORREÇÃO DO BUG)
-        # np.squeeze remove todos os eixos desnecessários, garantindo um array 1D.
-        num_coeffs = np.squeeze(numeric_tf.num).tolist()
-        den_coeffs = np.squeeze(numeric_tf.den).tolist()
-        if not isinstance(num_coeffs, list): num_coeffs = [num_coeffs]
-        if not isinstance(den_coeffs, list): den_coeffs = [den_coeffs]
-
-        # 3. Conversão para Polinómios Simbólicos
-        s = sp.symbols(variable)
-        numerator_poly = sp.Poly(num_coeffs, s).as_expr()
-        denominator_poly = sp.Poly(den_coeffs, s).as_expr()
-
-        # 4. Criação da Nova Instância
-        new_instance = cls(numerator_poly, denominator_poly, variable=s)
-
-        # 5. Adição do Registo de Histórico (CORREÇÃO DA OMISSÃO)
-        new_instance.history.steps[0].operation = "Criação a partir de Objeto Numérico"
-        new_instance.history.steps[0].description = f"Importado de um objeto {type(numeric_tf).__name__}."
-        new_instance.history.steps[0].before = {"numeric_object_str": str(numeric_tf)}
-
-        return new_instance
 
     def characteristic_equation(self) -> sp.Expr:
         """
