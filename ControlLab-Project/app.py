@@ -20,9 +20,13 @@ def recalculate_analysis():
         s = sp.symbols('s')
         param_symbol = sp.symbols(data['param_name'])
 
-        num_str, den_str = data['system_definition'].split('/')
-        num_expr = sp.sympify(num_str, locals={'s': s, data['param_name']: param_symbol})
-        den_expr = sp.sympify(den_str, locals={'s': s, data['param_name']: param_symbol})
+        # 1. Converte a string inteira numa única expressão SymPy.
+        #    O sympify é inteligente o suficiente para entender os parênteses.
+        full_expr = sp.sympify(data['system_definition'], locals={'s': s, 'K': param_symbol})
+
+        # 2. Usa o SymPy para extrair o numerador e o denominador de forma segura.
+        #    O método .as_numer_den() é a forma canónica de fazer isto.
+        num_expr, den_expr = full_expr.as_numer_den()
 
         symbolic_tf = SymbolicTransferFunction(num_expr, den_expr, s)
 

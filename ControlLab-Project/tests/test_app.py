@@ -11,7 +11,7 @@ def test_recalculate_analysis_endpoint(client):
     """Testa o endpoint /api/recalculate_analysis."""
     # Dados de exemplo para a requisição
     request_data = {
-        "system_definition": "K/(s*(s+5))",
+        "system_definition": "(K*(s+1))/(s*(s+5)*(s+10))",
         "param_name": "K",
         "param_value": 10.0,
         "analysis_type": "step_response"
