@@ -633,10 +633,14 @@ class RootLocusAnalyzer:
 
 
 # Funções utilitárias independentes
-def get_locus_features(tf_obj, show_steps: bool = True) -> LocusFeatures:
-    """Função wrapper para extrair características do root locus"""
+def get_locus_features(tf_obj) -> Tuple[LocusFeatures, LocusHistory]:
+    """
+    Extrai todas as características do root locus, retornando os dados brutos e o histórico.
+    Esta é a função "motor" de cálculo.
+    """
     analyzer = RootLocusAnalyzer()
-    return analyzer.get_locus_features(tf_obj, show_steps)
+    features = analyzer.get_locus_features(tf_obj, show_steps=True)
+    return features, analyzer.history
 
 
 def calculate_asymptotes(zeros: List, poles: List) -> Dict:

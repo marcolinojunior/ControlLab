@@ -173,12 +173,16 @@ class TestSymbolicTransferFunction:
         tf = SymbolicTransferFunction(1, self.s + 1)
 
         # Avalia em s = 0
-        value = tf.evaluate_at(0)
-        assert value == 1.0
+        value = tf.evaluate(0)
+        assert abs(value - 1.0) < 1e-10
 
         # Avalia em s = -0.5
-        value = tf.evaluate_at(-0.5)
+        value = tf.evaluate(-0.5)
         assert abs(value - 2.0) < 1e-10
+
+        # Avalia em s = -1 (polo)
+        value_at_pole = tf.evaluate(-1)
+        assert value_at_pole == sp.zoo
 
     def test_proper_transfer_function(self):
         """Teste de verificação de função própria"""

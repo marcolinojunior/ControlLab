@@ -300,17 +300,16 @@ class StateSpaceController:
 
     def pole_placement(self, A: sp.Matrix, B: sp.Matrix, desired_poles: List[Union[complex, float]]):
         n = A.rows
-        controllability_matrix = self._controllability_matrix(A, B)
-        rank = controllability_matrix.rank()
+        ss_obj = SymbolicStateSpace(A, B, sp.eye(n), sp.zeros(n, B.cols))
 
-        if rank != n:
+        controllability = check_controllability(ss_obj, show_steps=False)
+        if not controllability['is_controllable']:
             error_message = (
-                f"FALHA NA ALOCAÇÃO DE POLOS: O sistema não é controlável (posto da matriz de controlabilidade é {rank}, mas deveria ser {n}).\n\n"
+                f"FALHA NA ALOCAÇÃO DE POLOS: O sistema não é controlável (posto da matriz de controlabilidade é {controllability['rank']}, mas deveria ser {n}).\n\n"
                 f"--> DIAGNÓSTICO: A alocação de polos requer que todos os estados do sistema sejam influenciados pela entrada. Revise as matrizes A e B do seu modelo."
             )
-            raise np.linalg.LinAlgError(error_message)
+            raise ValueError(error_message)
 
-        ss_obj = SymbolicStateSpace(A, B, sp.eye(n), sp.zeros(n, B.cols))
         acker_result = acker(ss_obj, desired_poles, False)
         return acker_result['gains']
 
