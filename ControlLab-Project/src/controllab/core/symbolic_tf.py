@@ -396,6 +396,10 @@ class SymbolicTransferFunction:
 
         return num_val / den_val
 
+    def evaluate(self, value: Union[int, float, complex]) -> complex:
+        """Alias for evaluate_at"""
+        return self.evaluate_at(value)
+
     @property
     def is_proper(self) -> bool:
         """Verifica se a função de transferência é própria"""
