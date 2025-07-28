@@ -290,6 +290,34 @@ class SymbolicTransferFunction:
 
         return result
 
+    def substitute_param(self, param_symbol: sp.Symbol, value: float) -> 'SymbolicTransferFunction':
+        """
+        Substitui um parâmetro simbólico por um valor numérico e retorna
+        uma nova instância da função de transferência.
+        """
+        # 1. Validação do Input (Boa prática)
+        if not isinstance(param_symbol, sp.Symbol):
+            raise TypeError("O parâmetro a ser substituído deve ser um símbolo do SymPy.")
+
+        # 2. Executar a substituição
+        new_num = self.numerator.subs(param_symbol, value)
+        new_den = self.denominator.subs(param_symbol, value)
+
+        # 3. Criar a nova instância
+        new_tf = SymbolicTransferFunction(new_num, new_den, self.variable)
+
+        # 4. Registrar a operação no histórico
+        new_tf.history.steps = list(self.history.steps) # Herda a história
+        new_tf.history.add_step(
+            operation="Substituição de Parâmetro",
+            description=f"O símbolo '{param_symbol}' foi substituído pelo valor '{value}'.",
+            before=self,
+            after=new_tf,
+            explanation="Esta operação é fundamental para análises paramétricas e interativas."
+        )
+
+        return new_tf
+
     def feedback(self, H: 'SymbolicTransferFunction' = None, sign: int = -1) -> 'SymbolicTransferFunction':
         """
         Calcula a função de transferência de malha fechada.
