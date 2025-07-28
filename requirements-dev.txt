@@ -6,9 +6,15 @@
 -r requirements.txt
 
 # --- Framework de Testes ---
-pytest>=7.0.0       # A nossa principal ferramenta para escrever e executar todos os testes unitários e de integração.
+pytest>=7.0.0
 
-# --- Ferramentas de Qualidade de Código (Sugestão Ideal) ---
-black>=22.0.0       # Formatador de código automático para manter um estilo consistente sem esforço.
-flake8>=4.0.0       # Ferramenta de "linting" que verifica por erros de sintaxe e problemas de estilo.
-mypy>=0.900         # Verificador de tipos estático para encontrar bugs relacionados com tipos antes da execução.
+# --- Módulos para Funcionalidades Específicas/Experimentais ---
+torch>=1.10.0       # ADICIONADO: Necessário para os testes de modelos de IA (test_model.py).
+
+# --- Módulos para Melhorar a Experiência Interativa ---
+ipython>=7.20.0     # ADICIONADO: Recomendado para a funcionalidade completa de visualização.
+
+# --- Ferramentas de Qualidade de Código (Recomendado) ---
+black>=22.0.0
+flake8>=4.0.0
+mypy>=0.900
