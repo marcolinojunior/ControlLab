@@ -18,7 +18,6 @@ Características:
 import sympy as sp
 from typing import Dict, List, Optional, Union, Tuple, Any
 from ..core.symbolic_tf import SymbolicTransferFunction
-from .design_utils import ControllerResult, DesignSpecifications, create_educational_content
 
 def PID(Kp: Union[float, sp.Symbol],
         Ki: Union[float, sp.Symbol],
@@ -164,6 +163,8 @@ def LeadLag(K: Union[float, sp.Symbol],
                                 None, "Avanço + Atraso", {"type": "explanation"})
 
     return controller
+
+from .design_utils import ControllerResult, DesignSpecifications, create_educational_content
 
 class CompensatorDesigner:
     """

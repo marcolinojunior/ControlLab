@@ -1,16 +1,6 @@
-# ===============================================
-# == Dependências Essenciais do ControlLab      ==
-# ===============================================
-
-# --- Núcleo Científico e Simbólico ---
-numpy>=1.21.0       # Fundamental para todas as operações numéricas e arrays.
-scipy>=1.7.0        # Usado para algoritmos científicos mais complexos (sinais, otimização, etc.).
-sympy>=1.9          # O coração do nosso motor simbólico para matemática exata.
-control>=0.9.0      # A biblioteca padrão da indústria para análise e simulação de sistemas de controlo em Python.
-matplotlib>=3.4.0   # Necessário para gerar os dados dos gráficos no backend, mesmo que a renderização final seja no frontend.
-
-# --- Servidor de API (Escolha uma ou ambas) ---
-# Descomente a linha correspondente ao framework que está a usar para o backend.
-# flask>=2.0
-# fastapi>=0.70.0
-# uvicorn>=0.15.0     # Necessário para executar o FastAPI.
+numpy
+scipy
+sympy
+control
+matplotlib
+plotly
