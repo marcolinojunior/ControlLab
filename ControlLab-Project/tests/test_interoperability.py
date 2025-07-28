@@ -23,13 +23,15 @@ def test_from_numeric_siso_standard():
 
 def test_from_numeric_pure_gain():
     """Testa a conversão de um sistema que é apenas um ganho puro."""
-    numeric_sys = ct.TransferFunction([10.5], [1]) # G(s) = 10.5
-
+    numeric_sys = ct.TransferFunction([10.5], [1])
     symbolic_sys = SymbolicTransferFunction.from_numeric(numeric_sys)
-
     assert symbolic_sys.numerator.equals(10.5)
     assert symbolic_sys.denominator.equals(1)
-    # Verifica se o histórico foi registado corretamente
+
+def test_from_numeric_history_tracking():
+    """Testa se a criação a partir de um objeto numérico é registada no histórico."""
+    numeric_sys = ct.TransferFunction([1, 1], [1, 2, 5])
+    symbolic_sys = SymbolicTransferFunction.from_numeric(numeric_sys)
     assert "Criação a partir de Objeto Numérico" in symbolic_sys.history.steps[0].operation
 
 def test_from_numeric_raises_error_for_mimo():

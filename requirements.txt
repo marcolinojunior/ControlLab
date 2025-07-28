@@ -11,6 +11,6 @@ matplotlib>=3.4.0   # Necessário para gerar os dados dos gráficos no backend, 
 
 # --- Servidor de API (Escolha uma ou ambas) ---
 # Descomente a linha correspondente ao framework que está a usar para o backend.
-# flask>=2.0
+flask>=2.0
 # fastapi>=0.70.0
 # uvicorn>=0.15.0     # Necessário para executar o FastAPI.

@@ -52,6 +52,23 @@ class TestSymbolicTransferFunction:
         
         assert sp.simplify(G.numerator - expected_num) == 0
         assert sp.simplify(G.denominator - expected_den) == 0
+
+    def test_substitute_param(self):
+        """Teste de substituição de um único parâmetro"""
+        tf = SymbolicTransferFunction(self.K, self.T * self.s + 1)
+
+        # Substitui K por 2
+        tf_sub = tf.substitute_param(self.K, 2)
+
+        assert tf_sub.numerator == 2
+        assert tf_sub.denominator == self.T * self.s + 1
+
+        # Verifica o histórico
+        assert len(tf_sub.history.steps) > 1
+        last_step = tf_sub.history.steps[-1]
+        assert last_step.operation == "Substituição de Parâmetro"
+        assert str(self.K) in last_step.description
+        assert "2" in last_step.description
     
     def test_addition(self):
         """Teste de adição de funções de transferência"""

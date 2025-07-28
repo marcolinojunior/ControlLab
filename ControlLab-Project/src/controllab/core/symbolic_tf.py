@@ -228,6 +228,23 @@ class SymbolicTransferFunction:
         )
         return simplified_tf
 
+    def substitute_param(self, param_symbol, value):
+        new_numerator = self.numerator.subs(param_symbol, value)
+        new_denominator = self.denominator.subs(param_symbol, value)
+
+        new_tf = SymbolicTransferFunction(new_numerator, new_denominator, self.variable)
+
+        new_tf.history.steps = self.history.steps.copy()
+        new_tf.history.add_step(
+            operation="Substituição de Parâmetro",
+            description=f"Substituído o parâmetro {param_symbol} por {value}",
+            before=self,
+            after=new_tf,
+            explanation=f"O símbolo {param_symbol} foi substituído pelo valor {value}."
+        )
+
+        return new_tf
+
     def substitute(self, substitutions: Dict[Symbol, Union[int, float, Symbol]]) -> 'SymbolicTransferFunction':
         """
         Substitui símbolos na função de transferência
@@ -561,7 +578,7 @@ class SymbolicTransferFunction:
         numérico, como um control.TransferFunction, de forma robusta e com
         rastreamento de histórico.
         """
-        # 1. Validação de Dependência e Input (A sua implementação disto está correta)
+        # 1. Validação (A sua implementação disto já está boa)
         if control is None:
             raise ImportError("A biblioteca 'python-control' é necessária para usar from_numeric.")
         if not isinstance(numeric_tf, control.TransferFunction):
@@ -569,18 +586,14 @@ class SymbolicTransferFunction:
         if not numeric_tf.issiso():
             raise NotImplementedError("A conversão de sistemas MIMO ainda não é suportada.")
 
-        # --- LÓGICA CORRIGIDA E REFINADA ---
-
-        # 2. Extração Robusta dos Coeficientes
-        # np.squeeze remove todos os eixos de dimensão 1, garantindo que obtemos um array 1D.
+        # 2. Extração Robusta dos Coeficientes (CORREÇÃO DO BUG)
+        # np.squeeze remove todos os eixos desnecessários, garantindo um array 1D.
         num_coeffs = np.squeeze(numeric_tf.num).tolist()
         den_coeffs = np.squeeze(numeric_tf.den).tolist()
-
-        # Garante que, mesmo para um ganho puro, tenhamos uma lista.
         if not isinstance(num_coeffs, list): num_coeffs = [num_coeffs]
         if not isinstance(den_coeffs, list): den_coeffs = [den_coeffs]
 
-        # 3. Conversão para Polinômios Simbólicos
+        # 3. Conversão para Polinómios Simbólicos
         s = sp.symbols(variable)
         numerator_poly = sp.Poly(num_coeffs, s).as_expr()
         denominator_poly = sp.Poly(den_coeffs, s).as_expr()
@@ -588,11 +601,10 @@ class SymbolicTransferFunction:
         # 4. Criação da Nova Instância
         new_instance = cls(numerator_poly, denominator_poly, variable=s)
 
-        # 5. Omissão Crítica Corrigida: Adicionar ao Histórico
-        # Modificamos o primeiro passo do histórico para refletir a origem numérica.
+        # 5. Adição do Registo de Histórico (CORREÇÃO DA OMISSÃO)
         new_instance.history.steps[0].operation = "Criação a partir de Objeto Numérico"
         new_instance.history.steps[0].description = f"Importado de um objeto {type(numeric_tf).__name__}."
-        new_instance.history.steps[0].before = {"numeric_object": str(numeric_tf)}
+        new_instance.history.steps[0].before = {"numeric_object_str": str(numeric_tf)}
 
         return new_instance
 
