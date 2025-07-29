@@ -142,7 +142,7 @@ def acker_observer(ss_obj: SymbolicStateSpace,
             f"--> AÇÃO RECOMENDADA:\n"
             f"    Revise as matrizes A e C do seu modelo. Pode haver estados que não afetam a saída."
         )
-        raise np.linalg.LinAlgError(error_message)
+        raise ValueError(error_message)
 
     # DEMONSTRAÇÃO DA DUALIDADE
     if show_steps:

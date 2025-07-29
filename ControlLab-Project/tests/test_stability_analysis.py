@@ -12,8 +12,6 @@ from sympy import symbols, I, pi
 import sys
 import os
 
-# Adicionar o diretório src ao path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 # Importar módulos para teste
 from controllab.analysis.routh_hurwitz import RouthHurwitzAnalyzer, StabilityResult
@@ -193,8 +191,7 @@ class TestStabilityUtils:
         
         system = s**2 + K1*s + K2
         result = analyzer.stability_region_2d(
-            system, K1, K2, 
-            k_range=(0.1, 10.0),  # Usar k_range em vez de param1_range
+            system, K1, K2,
             param1_range=(0.1, 5.0), 
             param2_range=(0.1, 5.0),
             resolution=10

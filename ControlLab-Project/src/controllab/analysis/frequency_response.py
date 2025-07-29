@@ -579,13 +579,21 @@ def calculate_frequency_response(tf_obj, omega_range: np.ndarray) -> FrequencyRe
     return analyzer.calculate_frequency_response(tf_obj, omega_range)
 
 
-def apply_nyquist_criterion(tf_obj, contour: NyquistContour = None) -> Dict:
-    """Função wrapper para aplicar critério de Nyquist"""
+def apply_nyquist_criterion(tf_obj, contour: NyquistContour = None) -> Tuple[Dict, FrequencyAnalysisHistory]:
+    """
+    Aplica o critério de Nyquist, retornando os dados brutos e o histórico.
+    Esta é a função "motor" de cálculo.
+    """
     analyzer = FrequencyAnalyzer()
-    return analyzer.apply_nyquist_criterion(tf_obj, contour)
+    result = analyzer.apply_nyquist_criterion(tf_obj, contour, show_steps=True)
+    return result, analyzer.history
 
 
-def calculate_gain_phase_margins(tf_obj) -> StabilityMargins:
-    """Função wrapper para calcular margens de estabilidade"""
+def calculate_gain_phase_margins(tf_obj) -> Tuple[StabilityMargins, FrequencyAnalysisHistory]:
+    """
+    Calcula as margens de ganho e fase, retornando os dados brutos e o histórico.
+    Esta é a função "motor" de cálculo.
+    """
     analyzer = FrequencyAnalyzer()
-    return analyzer.calculate_gain_phase_margins(tf_obj)
+    margins = analyzer.calculate_gain_phase_margins(tf_obj, show_steps=True)
+    return margins, analyzer.history

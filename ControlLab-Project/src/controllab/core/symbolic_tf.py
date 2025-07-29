@@ -405,28 +405,20 @@ class SymbolicTransferFunction:
         except:
             return f"\\frac{{{latex(self.numerator)}}}{{{latex(self.denominator)}}}"
 
-    def evaluate_at(self, value: Union[int, float, complex]) -> complex:
+    def evaluate(self, value: complex) -> complex:
         """
-        Avalia a função de transferência em um ponto específico
-
-        Args:
-            value: Valor para avaliar a função
-
-        Returns:
-            complex: Valor da função no ponto especificado
+        Avalia a função de transferência para um valor complexo de s.
         """
-        substitutions = {self.variable: value}
-        num_val = complex(self.numerator.subs(substitutions))
-        den_val = complex(self.denominator.subs(substitutions))
+        # Usa sympy.subs para substituir a variável pelo valor e depois avalia
+        # numericamente com .evalf()
+        num_val = self.numerator.subs(self.variable, value).evalf()
+        den_val = self.denominator.subs(self.variable, value).evalf()
 
         if den_val == 0:
-            raise ValueError(f"Denominador é zero em {self.variable} = {value}")
+            # Retorna infinito complexo se o denominador for zero (um polo)
+            return sp.zoo
 
-        return num_val / den_val
-
-    def evaluate(self, value: Union[int, float, complex]) -> complex:
-        """Alias for evaluate_at"""
-        return self.evaluate_at(value)
+        return complex(num_val / den_val)
 
     @property
     def is_proper(self) -> bool:
