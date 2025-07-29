@@ -1,7 +1,7 @@
 
 from flask import Flask, request, jsonify
 from controllab.core.symbolic_tf import SymbolicTransferFunction
-from controllab.numerical.factory import NumericalSystemFactory
+from controllab.numerical.interface import NumericalInterface
 import sympy as sp
 import numpy as np
 
@@ -13,12 +13,12 @@ def run_step_response_analysis(tf_symbolic):
     para numérico e calcular a sua resposta ao degrau.
     """
     # 1. Usa a nossa "fábrica" para criar um sistema numérico
-    factory = NumericalSystemFactory()
-    numeric_sys = factory.create_from_symbolic(tf_symbolic)
+    interface = NumericalInterface()
+    numeric_sys = interface.symbolic_to_control_tf(tf_symbolic)
 
     # 2. Usa o nosso simulador para obter a resposta
     # (Assumindo que simulate_system_response retorna tempo e resposta)
-    time, response = simulate_system_response(numeric_sys, input_type="step")
+    time, response = interface.compute_step_response(numeric_sys)
 
     # 3. Formata a saída para JSON
     return {"time": time.tolist(), "response": response.tolist()}
