@@ -2,7 +2,6 @@
 from flask import Flask, request, jsonify
 from controllab.core.symbolic_tf import SymbolicTransferFunction
 from controllab.numerical.factory import NumericalSystemFactory
-from controllab.numerical.simulation import simulate_system_response
 import sympy as sp
 import numpy as np
 

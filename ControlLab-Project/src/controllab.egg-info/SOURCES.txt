@@ -3,6 +3,7 @@ src/controllab/__init__.py
 src/controllab.egg-info/PKG-INFO
 src/controllab.egg-info/SOURCES.txt
 src/controllab.egg-info/dependency_links.txt
+src/controllab.egg-info/requires.txt
 src/controllab.egg-info/top_level.txt
 src/controllab/analysis/__init__.py
 src/controllab/analysis/frequency_response.py
