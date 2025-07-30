@@ -11,3 +11,4 @@ control>=0.10
 
 # Visualização
 plotly>=5.15
+ipython>=8.0

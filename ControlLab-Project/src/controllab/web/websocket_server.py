@@ -13,6 +13,8 @@ Classes implementadas:
 import asyncio
 import json
 import logging
+import os
+import sys
 from typing import Dict, List, Any, Optional, Set
 from datetime import datetime
 import uuid
@@ -209,7 +211,9 @@ class ConnectionManager:
             if await self.send_to_connection(connection_id, message):
                 sent_count += 1
                 
-        return sent_count    async def cleanup_symbolic_cache(self):
+        return sent_count
+
+    async def cleanup_symbolic_cache(self):
         """Limpa cache de objetos simbólicos periodicamente"""
         cache_size = len(self.symbolic_bridge.symbolic_cache)
         if cache_size > 1000:  # Limite arbitrário
