@@ -48,6 +48,7 @@ try:
         check_observability,
         acker_observer,
         design_luenberger_observer,
+        ObserverDesigner,
     )
     
     # Importar novos módulos implementados
