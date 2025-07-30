@@ -51,7 +51,7 @@ try:
             sys.path.insert(0, src_path)
 
     from controllab.analysis.routh_hurwitz import RouthHurwitzAnalyzer, StabilityResult
-    from controllab.analysis.root_locus import get_locus_features
+    from controllab.analysis.root_locus import RootLocusAnalyzer
     from controllab.analysis.frequency_response import calculate_gain_phase_margins, apply_nyquist_criterion
     from controllab.analysis.stability_utils import (StabilityValidator, ParametricAnalyzer,
                                  ValidationHistory, format_stability_report)
@@ -63,7 +63,7 @@ except ImportError as e:
     # Tentar imports alternativos para teste direto
     try:
         from routh_hurwitz import RouthHurwitzAnalyzer, StabilityResult
-        from root_locus import get_locus_features
+        from root_locus import RootLocusAnalyzer
         from frequency_response import FrequencyAnalyzer, StabilityMargins
         from stability_utils import (StabilityValidator, ParametricAnalyzer,
                                      ValidationHistory, format_stability_report)
@@ -73,7 +73,7 @@ except ImportError as e:
         warnings.warn(f"Alguns módulos de análise não estão disponíveis: {e}")
         # Definir classes vazias como fallback
         RouthHurwitzAnalyzer = None
-        get_locus_features = None
+        RootLocusAnalyzer = None
         FrequencyAnalyzer = None
         StabilityValidator = None
         ParametricAnalyzer = None
@@ -221,8 +221,8 @@ class ComprehensiveStabilityReport:
             analysis += "📍 ANÁLISE DO LUGAR GEOMÉTRICO:\n"
             analysis += "-" * 35 + "\n"
             try:
-                if hasattr(self.root_locus_results, 'get_formatted_history'):
-                    analysis += self.root_locus_results.get_formatted_history()
+                if hasattr(self.root_locus_results, 'analysis_history') and self.root_locus_results.analysis_history:
+                    analysis += self.root_locus_results.analysis_history.get_formatted_report()
                 else:
                     analysis += str(self.root_locus_results)
             except Exception as e:
@@ -352,16 +352,7 @@ class ComprehensiveStabilityReport:
 
         if self.root_locus_results:
             # Determinar estabilidade por root locus (polos no lado esquerdo)
-            rl_stable = True
-            if hasattr(self.root_locus_results, 'poles'):
-                for pole in self.root_locus_results.poles:
-                    if hasattr(pole, 'real'):
-                        if pole.real >= 0:
-                            rl_stable = False
-                            break
-                    elif pole >= 0:
-                        rl_stable = False
-                        break
+            rl_stable = self.root_locus_results.stability_assessment.get('is_stable', None)
             methods_results.append(("Root Locus", rl_stable))
 
         if self.frequency_response_results:
@@ -400,6 +391,7 @@ class StabilityAnalysisEngine:
 
     def __init__(self):
         self.routh_analyzer = RouthHurwitzAnalyzer() if RouthHurwitzAnalyzer else None
+        self.root_locus_analyzer = RootLocusAnalyzer() if RootLocusAnalyzer else None
         self.validator = StabilityValidator() if StabilityValidator else None
         self.parametric_analyzer = ParametricAnalyzer() if ParametricAnalyzer else None
 
@@ -442,13 +434,13 @@ class StabilityAnalysisEngine:
                 report.add_conclusion("Routh-Hurwitz", f"Erro na análise: {e}", "Baixa")
 
         # 2. Análise do Root Locus
-        if get_locus_features and format_root_locus_response:
+        if self.root_locus_analyzer:
             try:
-                features, history = get_locus_features(tf_obj)
-                pedagogical_report = format_root_locus_response(features, history)
-                report.add_analysis_report('Root Locus', pedagogical_report)
+                features = self.root_locus_analyzer.analyze_comprehensive(tf_obj, show_steps=show_all_steps)
+                report.root_locus_results = features
 
-                conclusion = "Análise de lugar geométrico completada"
+                is_stable = features.stability_assessment.get('is_stable')
+                conclusion = "Sistema estável" if is_stable else "Sistema instável" if is_stable is False else "Análise de estabilidade do Root Locus inconclusiva"
                 report.add_conclusion("Root Locus", conclusion)
 
                 if show_all_steps:
@@ -544,7 +536,7 @@ class StabilityAnalysisEngine:
                 conclusion = "Sistema estável" if stability_result.is_stable else "Sistema instável"
                 report.add_conclusion("Routh-Hurwitz", conclusion)
 
-                if show_steps:
+                if show_all_steps:
                     report.add_educational_note("Routh-Hurwitz",
                         "Método algébrico que analisa estabilidade sem calcular raízes explicitamente")
 
@@ -698,6 +690,30 @@ def compare_systems_stability(systems: List[Any], labels: List[str] = None) -> D
 # ============================================================================
 # SEÇÃO DE TESTE E VALIDAÇÃO
 # ============================================================================
+def validate_stability_methods(tf_obj, show_steps=True):
+    """
+    Função de validação cruzada que retorna um dicionário simples
+    para ser usado nos testes.
+    """
+    engine = StabilityAnalysisEngine()
+    report = engine.comprehensive_analysis(tf_obj, show_all_steps=show_steps)
+
+    results = {}
+
+    # Routh-Hurwitz
+    if report.routh_hurwitz_results:
+        results['routh_hurwitz'] = report.routh_hurwitz_results
+
+    # Root Locus
+    if report.root_locus_results and hasattr(report.root_locus_results, 'stability_assessment'):
+        is_stable = report.root_locus_results.stability_assessment.get('is_stable')
+        results['root_analysis'] = {'is_stable': is_stable}
+
+    # Frequency Analysis
+    if report.frequency_response_results:
+        results['frequency_analysis'] = report.frequency_response_results
+
+    return results
 
 def run_module_validation():
     """
