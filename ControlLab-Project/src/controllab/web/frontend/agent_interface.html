@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ControlLab AI Agent Interface</title>
+    
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            opacity: 0.8;
+            font-size: 1.1rem;
+        }
+        
+        .container {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1rem;
+            padding: 1rem;
+            min-height: 0;
+        }
+        
+        .panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .panel h2 {
+            color: #333;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 0.5rem;
+        }
+        
+        /* Painel de Entrada */
+        .input-panel {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        .input-panel h2 {
+            color: white;
+            border-bottom-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .input-group {
+            margin-bottom: 1rem;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        
+        .input-group input,
+        .input-group select,
+        .input-group textarea {
+            width: 100%;
+            padding: 0.8rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+        }
+        
+        .input-group textarea {
+            resize: vertical;
+            min-height: 80px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+        
+        .btn {
+            padding: 0.8rem 1rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .btn-primary {
+            background: #4CAF50;
+            border-color: #4CAF50;
+        }
+        
+        .btn-secondary {
+            background: #2196F3;
+            border-color: #2196F3;
+        }
+        
+        .btn-tertiary {
+            background: #FF9800;
+            border-color: #FF9800;
+        }
+        
+        /* Painel de Chat */
+        .chat-panel {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+        }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            min-height: 400px;
+        }
+        
+        .message {
+            margin-bottom: 1rem;
+            padding: 1rem;
+            border-radius: 10px;
+            max-width: 90%;
+        }
+        
+        .user-message {
+            background: #667eea;
+            color: white;
+            margin-left: auto;
+        }
+        
+        .agent-message {
+            background: white;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+        
+        .system-message {
+            background: #f0f0f0;
+            color: #666;
+            font-style: italic;
+            text-align: center;
+        }
+        
+        .chat-input {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .chat-input input {
+            flex: 1;
+            padding: 0.8rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        
+        .chat-input button {
+            padding: 0.8rem 1.5rem;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        /* Painel de Visualização */
+        .visualization-panel {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+        }
+        
+        .plot-container {
+            flex: 1;
+            background: white;
+            border-radius: 10px;
+            padding: 1rem;
+            min-height: 400px;
+        }
+        
+        .status {
+            padding: 0.5rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .status.connected {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status.processing {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .math-display {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 0.5rem 0;
+            border-left: 4px solid #667eea;
+        }
+        
+        @media (max-width: 1200px) {
+            .container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🤖 ControlLab AI Agent Interface</h1>
+        <p>Sistema Educacional de Engenharia de Controle com IA</p>
+    </div>
+    
+    <div class="container">
+        <!-- Painel de Entrada -->
+        <div class="panel input-panel">
+            <h2>🎯 Entrada Inteligente</h2>
+            
+            <div class="status" id="connectionStatus">Desconectado do servidor</div>
+            
+            <div class="input-group">
+                <label>Função de Transferência:</label>
+                <textarea id="tfInput" placeholder="Ex: 1/(s**2 + 2*s + 1)">1/(s**2 + 2*s + 1)</textarea>
+            </div>
+            
+            <div class="input-group">
+                <label>Tipo de Análise:</label>
+                <select id="analysisType" multiple>
+                    <option value="stability" selected>Estabilidade</option>
+                    <option value="step" selected>Resposta ao Degrau</option>
+                    <option value="bode">Diagrama de Bode</option>
+                    <option value="root_locus">Lugar das Raízes</option>
+                </select>
+            </div>
+            
+            <div class="buttons">
+                <button class="btn btn-primary" onclick="analyzeSystem()">
+                    🔍 Analisar Sistema
+                </button>
+                <button class="btn btn-secondary" onclick="designPID()">
+                    ⚙️ Projetar PID
+                </button>
+                <button class="btn btn-tertiary" onclick="compareMode()">
+                    📊 Comparar Sistemas
+                </button>
+                <button class="btn" onclick="clearAll()">
+                    🗑️ Limpar Tudo
+                </button>
+            </div>
+            
+            <div class="input-group" style="margin-top: 1rem;">
+                <label>Código Python Direto:</label>
+                <textarea id="pythonCode" placeholder="# Execute código Python diretamente no ControlLab
+import sympy as sp
+s = sp.Symbol('s')
+tf = SymbolicTransferFunction(1/(s**2 + 2*s + 1))
+print(f'Polos: {tf.poles()}')"></textarea>
+                <button class="btn btn-primary" onclick="executePythonCode()" style="margin-top: 0.5rem; width: 100%;">
+                    🐍 Executar Python
+                </button>
+            </div>
+        </div>
+        
+        <!-- Painel de Chat com IA -->
+        <div class="panel chat-panel">
+            <h2>🤖 Chat com IA Socrática</h2>
+            
+            <div class="chat-messages" id="chatMessages">
+                <div class="message system-message">
+                    Olá! Sou seu tutor de Engenharia de Controle. Posso ajudar você a entender sistemas de controle, projetar controladores e executar análises. Faça uma pergunta ou peça uma análise!
+                </div>
+            </div>
+            
+            <div class="chat-input">
+                <input type="text" id="chatInput" placeholder="Digite sua pergunta sobre controle..." onkeypress="handleChatEnter(event)">
+                <button onclick="sendMessage()">Enviar</button>
+            </div>
+        </div>
+        
+        <!-- Painel de Visualização -->
+        <div class="panel visualization-panel">
+            <h2>📊 Visualização Dinâmica</h2>
+            
+            <div class="plot-container" id="plotContainer">
+                <div style="text-align: center; padding: 2rem; color: #666;">
+                    <p>📈 Gráficos aparecerão aqui após análises</p>
+                    <p>Os resultados serão plotados automaticamente</p>
+                </div>
+            </div>
+            
+            <div style="margin-top: 1rem; font-size: 0.9rem; opacity: 0.8;">
+                <strong>Últimos Resultados:</strong>
+                <div id="lastResults" style="background: rgba(255,255,255,0.8); padding: 0.5rem; border-radius: 5px; margin-top: 0.5rem; min-height: 50px;">
+                    Nenhum resultado ainda
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Configuração do WebSocket
+        let ws = null;
+        let isConnected = false;
+        
+        // Estado da aplicação
+        let currentResults = null;
+        let chatHistory = [];
+        
+        // Conecta ao servidor WebSocket
+        function connectWebSocket() {
+            try {
+                ws = new WebSocket('ws://localhost:8765');
+                
+                ws.onopen = function(event) {
+                    isConnected = true;
+                    updateConnectionStatus('connected', 'Conectado ao ControlLab Agent');
+                    addSystemMessage('Conectado ao servidor ControlLab! Pronto para análises.');
+                };
+                
+                ws.onmessage = function(event) {
+                    const response = JSON.parse(event.data);
+                    handleServerResponse(response);
+                };
+                
+                ws.onclose = function(event) {
+                    isConnected = false;
+                    updateConnectionStatus('disconnected', 'Desconectado do servidor');
+                    addSystemMessage('Conexão perdida. Tentando reconectar...');
+                    setTimeout(connectWebSocket, 3000);
+                };
+                
+                ws.onerror = function(error) {
+                    updateConnectionStatus('disconnected', 'Erro de conexão');
+                    addSystemMessage('Erro de conexão. Verifique se o servidor está rodando.');
+                };
+                
+            } catch (error) {
+                updateConnectionStatus('disconnected', 'Falha ao conectar');
+                console.error('Erro ao conectar WebSocket:', error);
+            }
+        }
+        
+        // Atualiza status de conexão
+        function updateConnectionStatus(status, message) {
+            const statusEl = document.getElementById('connectionStatus');
+            statusEl.className = `status ${status}`;
+            statusEl.textContent = message;
+        }
+        
+        // Envia mensagem para o servidor
+        function sendToServer(messageType, payload) {
+            if (!isConnected) {
+                addSystemMessage('❌ Não conectado ao servidor. Tentando reconectar...');
+                connectWebSocket();
+                return;
+            }
+            
+            updateConnectionStatus('processing', 'Processando...');
+            
+            const message = {
+                type: messageType,
+                payload: payload,
+                timestamp: new Date().toISOString()
+            };
+            
+            ws.send(JSON.stringify(message));
+        }
+        
+        // Manipula respostas do servidor
+        function handleServerResponse(response) {
+            updateConnectionStatus('connected', 'Conectado ao ControlLab Agent');
+            
+            if (response.type === 'error') {
+                addAgentMessage(`❌ Erro: ${response.error}`, 'error');
+                return;
+            }
+            
+            if (response.success && response.data) {
+                currentResults = response.data;
+                displayResults(response.data);
+                updateLastResults(response.data);
+            } else if (response.error) {
+                addAgentMessage(`❌ ${response.error}`, 'error');
+            }
+        }
+        
+        // Funções principais de análise
+        function analyzeSystem() {
+            const tfExpression = document.getElementById('tfInput').value;
+            const analysisSelect = document.getElementById('analysisType');
+            const selectedAnalyses = Array.from(analysisSelect.selectedOptions).map(option => option.value);
+            
+            if (!tfExpression.trim()) {
+                addSystemMessage('❌ Digite uma função de transferência válida');
+                return;
+            }
+            
+            addUserMessage(`Analisando sistema: ${tfExpression}`);
+            addUserMessage(`Análises: ${selectedAnalyses.join(', ')}`);
+            
+            sendToServer('analyze_tf', {
+                expression: tfExpression,
+                analyses: selectedAnalyses
+            });
+        }
+        
+        function designPID() {
+            const plantExpression = document.getElementById('tfInput').value;
+            
+            if (!plantExpression.trim()) {
+                addSystemMessage('❌ Digite a função de transferência da planta');
+                return;
+            }
+            
+            addUserMessage(`Projetando PID para planta: ${plantExpression}`);
+            
+            sendToServer('design_pid', {
+                plant: plantExpression,
+                method: 'ziegler_nichols'
+            });
+        }
+        
+        function compareMode() {
+            addSystemMessage('🔄 Modo comparação não implementado ainda');
+        }
+        
+        function clearAll() {
+            document.getElementById('tfInput').value = '';
+            document.getElementById('pythonCode').value = '';
+            document.getElementById('chatMessages').innerHTML = '<div class="message system-message">Chat limpo. Faça uma nova pergunta!</div>';
+            document.getElementById('plotContainer').innerHTML = '<div style="text-align: center; padding: 2rem; color: #666;"><p>📈 Gráficos aparecerão aqui após análises</p></div>';
+            document.getElementById('lastResults').textContent = 'Nenhum resultado ainda';
+            currentResults = null;
+            chatHistory = [];
+        }
+        
+        function executePythonCode() {
+            const code = document.getElementById('pythonCode').value;
+            
+            if (!code.trim()) {
+                addSystemMessage('❌ Digite código Python para executar');
+                return;
+            }
+            
+            addUserMessage(`Executando código Python:\n\`\`\`python\n${code}\n\`\`\``);
+            
+            sendToServer('execute_code', {
+                code: code
+            });
+        }
+        
+        // Funções de chat
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            addUserMessage(message);
+            input.value = '';
+            
+            sendToServer('interactive_query', {
+                query: message
+            });
+        }
+        
+        function handleChatEnter(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+        
+        function addUserMessage(message) {
+            addMessage(message, 'user-message');
+        }
+        
+        function addAgentMessage(message, type = 'agent') {
+            addMessage(message, 'agent-message');
+        }
+        
+        function addSystemMessage(message) {
+            addMessage(message, 'system-message');
+        }
+        
+        function addMessage(message, className) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${className}`;
+            messageDiv.innerHTML = formatMessage(message);
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            chatHistory.push({
+                message: message,
+                type: className,
+                timestamp: new Date().toISOString()
+            });
+        }
+        
+        function formatMessage(message) {
+            // Formata código Python
+            message = message.replace(/```python\n([\s\S]*?)\n```/g, '<pre style="background: #f4f4f4; padding: 0.5rem; border-radius: 5px; overflow-x: auto;"><code>$1</code></pre>');
+            
+            // Formata código inline
+            message = message.replace(/`([^`]+)`/g, '<code style="background: #f4f4f4; padding: 0.2rem; border-radius: 3px;">$1</code>');
+            
+            // Quebras de linha
+            message = message.replace(/\n/g, '<br>');
+            
+            return message;
+        }
+        
+        // Exibição de resultados
+        function displayResults(data) {
+            if (data.transfer_function) {
+                addAgentMessage(`✅ **Sistema analisado:** ${data.transfer_function}`);
+            }
+            
+            if (data.stability) {
+                const stable = data.stability.stable ? '✅ Estável' : '❌ Instável';
+                addAgentMessage(`🔍 **Estabilidade:** ${stable} (Método: ${data.stability.method})`);
+            }
+            
+            if (data.step_response) {
+                addAgentMessage(`📈 **Resposta ao degrau calculada** - ${data.step_response.time.length} pontos`);
+                plotStepResponse(data.step_response);
+            }
+            
+            if (data.bode) {
+                addAgentMessage(`📊 **Diagrama de Bode calculado** - ${data.bode.frequency.length} pontos`);
+                plotBodeResponse(data.bode);
+            }
+            
+            if (data.pid_parameters) {
+                addAgentMessage(`⚙️ **PID Projetado:**\n- Kp = ${data.pid_parameters.Kp.toFixed(3)}\n- Ki = ${data.pid_parameters.Ki.toFixed(3)}\n- Kd = ${data.pid_parameters.Kd.toFixed(3)}`);
+            }
+            
+            if (data.output) {
+                addAgentMessage(`🐍 **Saída Python:**\n\`\`\`\n${data.output}\n\`\`\``);
+            }
+            
+            if (data.error) {
+                addAgentMessage(`❌ **Erro:**\n${data.error.type}: ${data.error.message}`, 'error');
+            }
+        }
+        
+        function updateLastResults(data) {
+            const resultsEl = document.getElementById('lastResults');
+            let summary = '';
+            
+            if (data.transfer_function) {
+                summary += `Sistema: ${data.transfer_function}\n`;
+            }
+            if (data.stability) {
+                summary += `Estabilidade: ${data.stability.stable ? 'Estável' : 'Instável'}\n`;
+            }
+            if (data.pid_parameters) {
+                summary += `PID: Kp=${data.pid_parameters.Kp.toFixed(2)}, Ki=${data.pid_parameters.Ki.toFixed(2)}, Kd=${data.pid_parameters.Kd.toFixed(2)}\n`;
+            }
+            
+            resultsEl.textContent = summary || 'Resultado processado';
+        }
+        
+        // Funções de plotagem
+        function plotStepResponse(stepData) {
+            const trace = {
+                x: stepData.time,
+                y: stepData.amplitude,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Resposta ao Degrau',
+                line: { color: '#667eea', width: 2 }
+            };
+            
+            const layout = {
+                title: 'Resposta ao Degrau',
+                xaxis: { title: 'Tempo (s)' },
+                yaxis: { title: 'Amplitude' },
+                margin: { t: 40, r: 20, b: 40, l: 60 }
+            };
+            
+            Plotly.newPlot('plotContainer', [trace], layout, {responsive: true});
+        }
+        
+        function plotBodeResponse(bodeData) {
+            const magTrace = {
+                x: bodeData.frequency,
+                y: bodeData.magnitude,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Magnitude (dB)',
+                yaxis: 'y1',
+                line: { color: '#667eea' }
+            };
+            
+            const phaseTrace = {
+                x: bodeData.frequency,
+                y: bodeData.phase,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Fase (graus)',
+                yaxis: 'y2',
+                line: { color: '#f5576c' }
+            };
+            
+            const layout = {
+                title: 'Diagrama de Bode',
+                xaxis: { title: 'Frequência (rad/s)', type: 'log' },
+                yaxis: { title: 'Magnitude (dB)', side: 'left' },
+                yaxis2: { title: 'Fase (graus)', side: 'right', overlaying: 'y' },
+                margin: { t: 40, r: 60, b: 40, l: 60 }
+            };
+            
+            Plotly.newPlot('plotContainer', [magTrace, phaseTrace], layout, {responsive: true});
+        }
+        
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            // Conecta ao WebSocket ao carregar a página
+            connectWebSocket();
+            
+            // Configura MathJax
+            window.MathJax = {
+                tex: {
+                    inlineMath: [['$', '$'], ['\\(', '\\)']],
+                    displayMath: [['$$', '$$'], ['\\[', '\\]']]
+                }
+            };
+        });
+    </script>
+</body>
+</html>

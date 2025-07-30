@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ControlLab - Tutor Inteligente de Controle</title>
+    
+    <!-- Bibliotecas externas -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.11.0/math.min.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --secondary-color: #8b5cf6;
+            --accent-color: #f59e0b;
+            --success-color: #10b981;
+            --error-color: #ef4444;
+            --warning-color: #f59e0b;
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --panel-bg: rgba(255, 255, 255, 0.95);
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --border-radius: 12px;
+            --shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            line-height: 1.6;
+        }
+        
+        /* Header elegante */
+        .header {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, #fff, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.2rem;
+            font-weight: 300;
+        }
+        
+        /* Container principal */
+        .container {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 400px 1fr 350px;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        /* Painéis base */
+        .panel {
+            background: var(--panel-bg);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .panel-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--primary-color);
+        }
+        
+        .panel-header h2 {
+            color: var(--text-primary);
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        .panel-header .icon {
+            font-size: 1.5rem;
+            margin-right: 0.75rem;
+        }
+        
+        /* Painel de Entrada Inteligente */
+        .input-panel {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        .input-panel .panel-header h2 {
+            color: white;
+        }
+        
+        .input-panel .panel-header {
+            border-bottom-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .smart-input-container {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+        
+        .smart-input {
+            width: 100%;
+            padding: 1rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--text-primary);
+            resize: vertical;
+            min-height: 100px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .smart-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+        }
+        
+        .input-suggestions {
+            margin-top: 0.5rem;
+        }
+        
+        .suggestion-chip {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            margin: 0.2rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .suggestion-chip:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+        
+        /* Botões de Análise */
+        .analysis-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .analysis-btn {
+            padding: 0.8rem;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .analysis-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .analysis-btn:active {
+            transform: translateY(0);
+        }
+        
+        .analysis-btn.primary {
+            background: var(--success-color);
+        }
+        
+        .analysis-btn.secondary {
+            background: var(--primary-color);
+        }
+        
+        /* Painel de Chat */
+        .chat-panel {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        
+        .chat-panel .panel-header h2 {
+            color: white;
+        }
+        
+        .chat-panel .panel-header {
+            border-bottom-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 400px;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 1rem;
+            max-height: 500px;
+        }
+        
+        .chat-message {
+            margin-bottom: 1rem;
+            padding: 0.8rem;
+            border-radius: 8px;
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        .chat-message.user {
+            background: rgba(255, 255, 255, 0.2);
+            margin-left: 2rem;
+        }
+        
+        .chat-message.ai {
+            background: rgba(255, 255, 255, 0.15);
+            margin-right: 2rem;
+            border-left: 4px solid var(--accent-color);
+        }
+        
+        .chat-message .sender {
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        .chat-message .content {
+            line-height: 1.5;
+        }
+        
+        .math-expression {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.5rem;
+            border-radius: 4px;
+            margin: 0.5rem 0;
+            font-family: 'Courier New', monospace;
+            border-left: 3px solid var(--accent-color);
+        }
+        
+        .connection-status {
+            padding: 0.5rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        
+        .connection-status.connected {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success-color);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        
+        .connection-status.disconnected {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--error-color);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        .connection-status.connecting {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning-color);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+        
+        /* Painel de Visualização */
+        .viz-panel {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: white;
+        }
+        
+        .viz-panel .panel-header h2 {
+            color: white;
+        }
+        
+        .viz-panel .panel-header {
+            border-bottom-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .viz-container {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 8px;
+            padding: 1rem;
+            color: var(--text-primary);
+            min-height: 400px;
+            position: relative;
+        }
+        
+        .viz-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+        
+        .viz-placeholder .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+        
+        /* Botões de Ação Sugerida */
+        .suggested-actions {
+            margin-top: 1rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        
+        .action-btn {
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 20px;
+            color: white;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+        
+        /* Animações */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .loading {
+            animation: pulse 1.5s infinite;
+        }
+        
+        /* Status indicators */
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+        
+        .status-indicator.online {
+            background: var(--success-color);
+        }
+        
+        .status-indicator.offline {
+            background: var(--error-color);
+        }
+        
+        .status-indicator.connecting {
+            background: var(--warning-color);
+            animation: pulse 1s infinite;
+        }
+        
+        /* Responsividade */
+        @media (max-width: 1200px) {
+            .container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+                gap: 1rem;
+            }
+            
+            .panel {
+                padding: 1rem;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .analysis-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h1>🎛️ ControlLab AI Tutor</h1>
+        <p>Sistema Inteligente de Tutoria em Engenharia de Controle</p>
+    </div>
+    
+    <!-- Container Principal -->
+    <div class="container">
+        <!-- Painel de Entrada Inteligente -->
+        <div class="panel input-panel">
+            <div class="panel-header">
+                <span class="icon">🎯</span>
+                <h2>Entrada Inteligente</h2>
+            </div>
+            
+            <div class="connection-status" id="connectionStatus">
+                <span class="status-indicator connecting"></span>
+                Conectando ao servidor...
+            </div>
+            
+            <div class="smart-input-container">
+                <label for="mathInput">Função de Transferência:</label>
+                <textarea 
+                    id="mathInput" 
+                    class="smart-input"
+                    placeholder="Digite sua função de transferência ou pergunta...
+Exemplos:
+• G(s) = 1/(s²+2*s+1)
+• Analise a estabilidade
+• Projete um controlador PID"
+                ></textarea>
+            </div>
+            
+            <div class="input-suggestions">
+                <div class="suggestion-chip" onclick="setInput('G(s) = 1/(s+1)')">G(s) = 1/(s+1)</div>
+                <div class="suggestion-chip" onclick="setInput('G(s) = 1/(s²+2*s+1)')">Sistema 2ª ordem</div>
+                <div class="suggestion-chip" onclick="setInput('G(s) = 5/(s*(s+2))')">Sistema tipo 1</div>
+                <div class="suggestion-chip" onclick="setInput('Analise estabilidade')">Analisar estabilidade</div>
+            </div>
+            
+            <div class="analysis-buttons">
+                <button class="analysis-btn primary" onclick="analyzeSystem()">
+                    <span>🔍</span> Analisar Sistema
+                </button>
+                <button class="analysis-btn secondary" onclick="designController()">
+                    <span>⚙️</span> Projetar PID
+                </button>
+                <button class="analysis-btn" onclick="plotBode()">
+                    <span>📊</span> Diagrama de Bode
+                </button>
+                <button class="analysis-btn" onclick="plotStepResponse()">
+                    <span>📈</span> Resposta Degrau
+                </button>
+            </div>
+            
+            <div class="suggested-actions" id="suggestedActions"></div>
+        </div>
+        
+        <!-- Painel de Chat -->
+        <div class="panel chat-panel">
+            <div class="panel-header">
+                <span class="icon">🤖</span>
+                <h2>Chat com IA Socrática</h2>
+            </div>
+            
+            <div class="chat-container">
+                <div class="chat-messages" id="chatMessages">
+                    <div class="chat-message ai">
+                        <div class="sender">ControlLab AI</div>
+                        <div class="content">
+                            Olá! Sou seu tutor de Engenharia de Controle. Posso ajudar você a entender 
+                            sistemas de controle, projetar controladores e executar análises. Faça 
+                            uma pergunta ou digite uma função de transferência!
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Painel de Visualização -->
+        <div class="panel viz-panel">
+            <div class="panel-header">
+                <span class="icon">📊</span>
+                <h2>Visualizações</h2>
+            </div>
+            
+            <div class="viz-container" id="vizContainer">
+                <div class="viz-placeholder">
+                    <div class="icon">📈</div>
+                    <h3>Aguardando análise...</h3>
+                    <p>Gráficos e diagramas aparecerão aqui após a análise do sistema</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Estado da aplicação
+        let websocket = null;
+        let currentSystem = null;
+        let connectionAttempts = 0;
+        let maxRetries = 5;
+        
+        // Configuração MathJax
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+        
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            connectWebSocket();
+            setupInputHandlers();
+        });
+        
+        // Conexão WebSocket
+        function connectWebSocket() {
+            const wsUrl = 'ws://localhost:8765';
+            updateConnectionStatus('connecting', 'Conectando ao servidor...');
+            
+            try {
+                websocket = new WebSocket(wsUrl);
+                
+                websocket.onopen = function(event) {
+                    console.log('✅ Conectado ao ControlLab Agent');
+                    updateConnectionStatus('connected', 'Conectado ao servidor');
+                    connectionAttempts = 0;
+                };
+                
+                websocket.onmessage = function(event) {
+                    try {
+                        const response = JSON.parse(event.data);
+                        handleServerResponse(response);
+                    } catch (error) {
+                        console.error('Erro ao processar resposta:', error);
+                        addChatMessage('system', 'Erro ao processar resposta do servidor');
+                    }
+                };
+                
+                websocket.onclose = function(event) {
+                    console.log('Conexão WebSocket fechada');
+                    updateConnectionStatus('disconnected', 'Desconectado do servidor');
+                    attemptReconnect();
+                };
+                
+                websocket.onerror = function(error) {
+                    console.error('Erro WebSocket:', error);
+                    updateConnectionStatus('disconnected', 'Erro de conexão. Verifique se o servidor está rodando.');
+                    attemptReconnect();
+                };
+                
+            } catch (error) {
+                console.error('Erro ao conectar WebSocket:', error);
+                updateConnectionStatus('disconnected', 'Erro de conexão');
+                attemptReconnect();
+            }
+        }
+        
+        function attemptReconnect() {
+            if (connectionAttempts < maxRetries) {
+                connectionAttempts++;
+                updateConnectionStatus('connecting', `Tentando reconectar... (${connectionAttempts}/${maxRetries})`);
+                setTimeout(connectWebSocket, 2000 * connectionAttempts);
+            } else {
+                updateConnectionStatus('disconnected', 'Falha na conexão. Execute o servidor: python advanced_agent.py');
+            }
+        }
+        
+        function updateConnectionStatus(status, message) {
+            const statusElement = document.getElementById('connectionStatus');
+            const indicator = statusElement.querySelector('.status-indicator');
+            
+            statusElement.className = `connection-status ${status}`;
+            indicator.className = `status-indicator ${status === 'connected' ? 'online' : status === 'connecting' ? 'connecting' : 'offline'}`;
+            
+            statusElement.innerHTML = `<span class="status-indicator ${indicator.className.split(' ')[1]}"></span>${message}`;
+        }
+        
+        // Configuração de handlers
+        function setupInputHandlers() {
+            const mathInput = document.getElementById('mathInput');
+            
+            mathInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && e.ctrlKey) {
+                    analyzeSystem();
+                }
+            });
+            
+            // Auto-resize textarea
+            mathInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = this.scrollHeight + 'px';
+            });
+        }
+        
+        // Funções de entrada
+        function setInput(text) {
+            document.getElementById('mathInput').value = text;
+        }
+        
+        function analyzeSystem() {
+            const input = document.getElementById('mathInput').value.trim();
+            if (!input) {
+                addChatMessage('system', 'Por favor, digite uma função de transferência ou pergunta.');
+                return;
+            }
+            
+            sendMessage('user_input', input);
+            addChatMessage('user', input);
+        }
+        
+        function designController() {
+            if (currentSystem) {
+                sendMessage('action', '', 'pid_design');
+            } else {
+                addChatMessage('ai', 'Primeiro preciso de uma função de transferência para projetar o controlador.');
+            }
+        }
+        
+        function plotBode() {
+            if (currentSystem) {
+                sendMessage('action', '', 'bode_plot');
+            } else {
+                addChatMessage('ai', 'Primeiro preciso de uma função de transferência para gerar o diagrama de Bode.');
+            }
+        }
+        
+        function plotStepResponse() {
+            if (currentSystem) {
+                sendMessage('action', '', 'step_response');
+            } else {
+                addChatMessage('ai', 'Primeiro preciso de uma função de transferência para mostrar a resposta ao degrau.');
+            }
+        }
+        
+        // Comunicação WebSocket
+        function sendMessage(type, content, action = null) {
+            if (!websocket || websocket.readyState !== WebSocket.OPEN) {
+                addChatMessage('system', 'Erro: Não conectado ao servidor. Tentando reconectar...');
+                connectWebSocket();
+                return;
+            }
+            
+            const message = {
+                type: type,
+                content: content,
+                action: action,
+                timestamp: new Date().toISOString()
+            };
+            
+            websocket.send(JSON.stringify(message));
+        }
+        
+        // Processamento de respostas
+        function handleServerResponse(response) {
+            console.log('Resposta do servidor:', response);
+            
+            switch (response.type) {
+                case 'welcome':
+                    addChatMessage('ai', response.message);
+                    break;
+                    
+                case 'transfer_function_analysis':
+                    handleTransferFunctionAnalysis(response);
+                    break;
+                    
+                case 'stability_analysis_complete':
+                    handleStabilityAnalysis(response);
+                    break;
+                    
+                case 'pid_design_options':
+                    handlePIDDesign(response);
+                    break;
+                    
+                case 'general_response':
+                    addChatMessage('ai', response.message);
+                    if (response.suggested_inputs) {
+                        showSuggestedActions(response.suggested_inputs);
+                    }
+                    break;
+                    
+                case 'request_system':
+                    addChatMessage('ai', response.message);
+                    if (response.example) {
+                        addChatMessage('ai', `Exemplo: ${response.example}`);
+                    }
+                    break;
+                    
+                case 'visualization':
+                    handleVisualization(response);
+                    break;
+                    
+                case 'error':
+                    addChatMessage('system', `Erro: ${response.message}`);
+                    if (response.suggestion) {
+                        addChatMessage('ai', response.suggestion);
+                    }
+                    break;
+                    
+                default:
+                    console.log('Tipo de resposta não reconhecido:', response.type);
+                    addChatMessage('ai', response.message || 'Resposta processada');
+            }
+        }
+        
+        function handleTransferFunctionAnalysis(response) {
+            const system = response.system;
+            currentSystem = system;
+            
+            // Adiciona mensagem explicativa
+            addChatMessage('ai', response.message);
+            
+            // Mostra informações do sistema
+            const systemInfo = `
+                <div class="math-expression">
+                <strong>Sistema Analisado:</strong><br>
+                Numerador: [${system.numerator.join(', ')}]<br>
+                Denominador: [${system.denominator.join(', ')}]<br>
+                Polos: ${system.poles.length} | Zeros: ${system.zeros.length}<br>
+                Estabilidade: ${system.stable ? '✅ Estável' : '❌ Instável'}
+                </div>
+            `;
+            addChatMessage('ai', systemInfo);
+            
+            // Mostra ações sugeridas
+            if (response.suggested_actions) {
+                showSuggestedActions(response.suggested_actions.map(a => a.label));
+            }
+            
+            // Gera visualizações
+            if (response.visualizations) {
+                generateVisualization(response.visualizations[0]);
+            }
+        }
+        
+        function handleStabilityAnalysis(response) {
+            addChatMessage('ai', response.message);
+            
+            if (response.conclusion) {
+                addChatMessage('ai', `<div class="math-expression">${response.conclusion}</div>`);
+            }
+            
+            if (response.detailed_steps) {
+                addChatMessage('ai', `<details><summary>Ver análise detalhada</summary>${response.detailed_steps}</details>`);
+            }
+        }
+        
+        function handlePIDDesign(response) {
+            addChatMessage('ai', response.message);
+            
+            if (response.methods) {
+                let methodsHtml = '<div class="math-expression"><strong>Métodos Disponíveis:</strong><br>';
+                response.methods.forEach(method => {
+                    methodsHtml += `• <strong>${method.name}:</strong> ${method.description}<br>`;
+                });
+                methodsHtml += '</div>';
+                addChatMessage('ai', methodsHtml);
+            }
+            
+            if (response.suggested_actions) {
+                showSuggestedActions(response.suggested_actions.map(a => a.label));
+            }
+        }
+        
+        function handleVisualization(response) {
+            generateVisualization(response);
+        }
+        
+        // Gerenciamento de chat
+        function addChatMessage(sender, content) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${sender}`;
+            
+            const senderDiv = document.createElement('div');
+            senderDiv.className = 'sender';
+            senderDiv.textContent = sender === 'user' ? 'Você' : 
+                                   sender === 'ai' ? 'ControlLab AI' : 'Sistema';
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'content';
+            contentDiv.innerHTML = content;
+            
+            messageDiv.appendChild(senderDiv);
+            messageDiv.appendChild(contentDiv);
+            messagesContainer.appendChild(messageDiv);
+            
+            // Auto-scroll
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            // Renderiza matemática se presente
+            if (content.includes('$') || content.includes('\\(')) {
+                MathJax.typesetPromise([contentDiv]);
+            }
+        }
+        
+        // Ações sugeridas
+        function showSuggestedActions(actions) {
+            const container = document.getElementById('suggestedActions');
+            container.innerHTML = '';
+            
+            actions.forEach(action => {
+                const button = document.createElement('button');
+                button.className = 'action-btn';
+                button.textContent = action;
+                button.onclick = () => {
+                    setInput(action);
+                    analyzeSystem();
+                };
+                container.appendChild(button);
+            });
+        }
+        
+        // Visualizações
+        function generateVisualization(vizData) {
+            const container = document.getElementById('vizContainer');
+            
+            if (vizData.type === 'pole_zero_map') {
+                generatePoleZeroMap(container, vizData.data);
+            } else if (vizData.type === 'step_response') {
+                generateStepResponse(container);
+            } else if (vizData.type === 'bode') {
+                generateBodePlot(container);
+            } else {
+                container.innerHTML = `
+                    <div class="viz-placeholder">
+                        <div class="icon">📊</div>
+                        <h3>Visualização: ${vizData.plot_type || vizData.type}</h3>
+                        <p>Gráfico será gerado aqui</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function generatePoleZeroMap(container, data) {
+            container.innerHTML = '<div id="poleZeroPlot" style="width:100%;height:350px;"></div>';
+            
+            // Dados dos polos e zeros
+            const poles = data.poles || [];
+            const zeros = data.zeros || [];
+            
+            const poleTrace = {
+                x: poles.map(p => p.real || Math.real(p) || 0),
+                y: poles.map(p => p.imag || Math.imag(p) || 0),
+                mode: 'markers',
+                type: 'scatter',
+                name: 'Polos',
+                marker: {
+                    symbol: 'x',
+                    size: 12,
+                    color: 'red'
+                }
+            };
+            
+            const zeroTrace = {
+                x: zeros.map(z => z.real || Math.real(z) || 0),
+                y: zeros.map(z => z.imag || Math.imag(z) || 0),
+                mode: 'markers',
+                type: 'scatter',
+                name: 'Zeros',
+                marker: {
+                    symbol: 'circle',
+                    size: 10,
+                    color: 'blue'
+                }
+            };
+            
+            const layout = {
+                title: 'Mapa Polos-Zeros',
+                xaxis: { title: 'Parte Real' },
+                yaxis: { title: 'Parte Imaginária' },
+                showlegend: true,
+                grid: true
+            };
+            
+            Plotly.newPlot('poleZeroPlot', [poleTrace, zeroTrace], layout);
+        }
+        
+        function generateStepResponse(container) {
+            container.innerHTML = '<div id="stepPlot" style="width:100%;height:350px;"></div>';
+            
+            // Gera resposta ao degrau simulada
+            const t = Array.from({length: 100}, (_, i) => i * 0.1);
+            const y = t.map(time => 1 - Math.exp(-time) * (1 + time)); // Sistema típico de 2ª ordem
+            
+            const trace = {
+                x: t,
+                y: y,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Resposta ao Degrau',
+                line: { color: 'blue', width: 2 }
+            };
+            
+            const layout = {
+                title: 'Resposta ao Degrau',
+                xaxis: { title: 'Tempo (s)' },
+                yaxis: { title: 'Amplitude' }
+            };
+            
+            Plotly.newPlot('stepPlot', [trace], layout);
+        }
+        
+        function generateBodePlot(container) {
+            container.innerHTML = '<div id="bodePlot" style="width:100%;height:350px;"></div>';
+            
+            // Gera diagrama de Bode simulado
+            const freq = Array.from({length: 100}, (_, i) => Math.pow(10, (i-50)/10));
+            const magnitude = freq.map(w => -20 * Math.log10(Math.sqrt(1 + w*w)));
+            const phase = freq.map(w => -Math.atan(w) * 180 / Math.PI);
+            
+            const magTrace = {
+                x: freq,
+                y: magnitude,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Magnitude',
+                line: { color: 'blue' },
+                xaxis: 'x',
+                yaxis: 'y'
+            };
+            
+            const phaseTrace = {
+                x: freq,
+                y: phase,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Fase',
+                line: { color: 'red' },
+                xaxis: 'x2',
+                yaxis: 'y2'
+            };
+            
+            const layout = {
+                title: 'Diagrama de Bode',
+                xaxis: { 
+                    title: 'Frequência (rad/s)',
+                    type: 'log',
+                    domain: [0, 1]
+                },
+                yaxis: { 
+                    title: 'Magnitude (dB)',
+                    domain: [0.55, 1]
+                },
+                xaxis2: { 
+                    title: 'Frequência (rad/s)',
+                    type: 'log',
+                    domain: [0, 1]
+                },
+                yaxis2: { 
+                    title: 'Fase (graus)',
+                    domain: [0, 0.45]
+                }
+            };
+            
+            Plotly.newPlot('bodePlot', [magTrace, phaseTrace], layout);
+        }
+    </script>
+</body>
+</html>

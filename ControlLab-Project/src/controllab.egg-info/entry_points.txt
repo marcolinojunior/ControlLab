@@ -1,0 +1,2 @@
+[console_scripts]
+controllab = controllab.cli:main

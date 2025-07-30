@@ -1,0 +1,287 @@
+Metadata-Version: 2.4
+Name: controllab
+Version: 0.1.0
+Summary: Educational control systems analysis and design tool
+Home-page: https://github.com/controllab/controllab
+Author: ControlLab Team
+Author-email: team@controllab.edu
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Education
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3.13.5
+Classifier: Topic :: Education
+Classifier: Topic :: Scientific/Engineering
+Classifier: Topic :: Scientific/Engineering :: Mathematics
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: torch>=2.0.0
+Requires-Dist: transformers>=4.36.0
+Requires-Dist: peft>=0.7.0
+Requires-Dist: datasets>=2.14.0
+Requires-Dist: accelerate>=0.24.0
+Requires-Dist: bitsandbytes>=0.41.0
+Requires-Dist: scipy>=1.10.0
+Requires-Dist: numpy>=1.24.0
+Requires-Dist: fastapi>=0.104.0
+Requires-Dist: uvicorn>=0.24.0
+Requires-Dist: websockets>=11.0
+Requires-Dist: pyyaml>=6.0
+Requires-Dist: matplotlib>=3.7.0
+Requires-Dist: pandas>=2.0.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.1; extra == "dev"
+Requires-Dist: pytest-mock>=3.11; extra == "dev"
+Requires-Dist: black>=23.0; extra == "dev"
+Requires-Dist: isort>=5.12; extra == "dev"
+Requires-Dist: flake8>=6.0; extra == "dev"
+Requires-Dist: mypy>=1.5; extra == "dev"
+Requires-Dist: pylint>=2.17; extra == "dev"
+Provides-Extra: docs
+Requires-Dist: sphinx>=7.1; extra == "docs"
+Requires-Dist: sphinx-rtd-theme>=1.3; extra == "docs"
+Provides-Extra: jupyter
+Requires-Dist: jupyter>=1.0; extra == "jupyter"
+Requires-Dist: ipykernel>=6.25; extra == "jupyter"
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: provides-extra
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
+
+# ControlLab AI Assistant
+
+## 🎓 Visão Geral
+
+O ControlLab AI Assistant é um sistema de IA especializado em ensino de engenharia de controle, desenvolvido especificamente para ser pedagógico e acessível a estudantes com TDAH.
+
+### 🎯 Características Principais
+
+- **Assistente Pedagógico Especializado**: Treinado especificamente para ensinar conceitos de controle
+- **Arquitetura Simbólico-Numérica**: Baseada em SymPy e python-control
+- **TDAH-Friendly**: Explicações passo a passo com contexto preservado
+- **Interface Web Interativa**: Experiência de aprendizado moderna e responsiva
+- **Fine-tuning Especializado**: Modelo Phi-3-mini adaptado para ControlLab
+
+## 🚀 Início Rápido
+
+### Opção 1: Script Automático
+```bash
+# Windows
+start_controllab.bat
+
+# Linux/Mac
+chmod +x start_controllab.sh
+./start_controllab.sh
+```
+
+### Opção 2: Manual
+
+1. **Gerar Dataset**:
+```bash
+python controllab_finetuning_setup.py
+```
+
+2. **Treinar Modelo**:
+```bash
+python train_controllab_assistant.py
+```
+
+3. **Iniciar Interface**:
+```bash
+python controllab_web_assistant.py
+```
+
+## 📊 Estrutura do Projeto
+
+```
+ControlLab-Project/
+├── controllab_finetuning_setup.py    # Geração de dataset especializado
+├── train_controllab_assistant.py     # Script de treinamento
+├── controllab_web_assistant.py       # Interface web completa
+├── validate_finetuning_setup.py      # Validação do sistema
+├── ai_toolkit_dataset/               # Datasets para treinamento
+├── controllab-phi3-lora/             # Modelo treinado (após treino)
+├── logs/                             # Logs de treinamento
+└── static/                           # Arquivos estáticos da web
+```
+
+## 🔧 Requisitos do Sistema
+
+### Dependências Python
+- Python 3.8+
+- PyTorch 2.0+
+- Transformers 4.36+
+- PEFT 0.7+
+- FastAPI + Uvicorn
+
+### Hardware Recomendado
+- **GPU**: NVIDIA RTX 3060 ou superior (12GB+ VRAM)
+- **CPU**: 8+ cores para treinamento em CPU
+- **RAM**: 16GB+ recomendado
+- **Storage**: 10GB+ espaço livre
+
+## 🎓 Funcionalidades
+
+### 💬 Conversa Livre
+- Discussão aberta sobre conceitos de controle
+- Contexto mantido durante toda a conversa
+- Explicações adaptadas ao nível do usuário
+
+### 🔍 Análise de Código
+- Análise pedagógica de código ControlLab
+- Explicação linha por linha
+- Sugestões de melhorias e alternativas
+
+### 🎯 Resolução de Problemas
+- Abordagem passo a passo para problemas de controle
+- Derivações matemáticas completas
+- Validação numérica dos resultados
+
+### 📚 Explicação de Conceitos
+- Definições claras e intuitivas
+- Múltiplas representações (matemática, visual, conceitual)
+- Conexões com teoria e prática
+
+## 🧠 Suporte TDAH
+
+### Características Especiais
+- **Persistência de Contexto**: Nunca perde o fio da meada
+- **Explicações Estruturadas**: Quebradas em pequenos passos
+- **Múltiplas Representações**: Visual, matemática e conceitual
+- **Checkpoints Automáticos**: Pontos de parada e retomada
+- **Feedback Contínuo**: Validação a cada etapa
+
+## 📈 Dados de Treinamento
+
+### Dataset Especializado
+- **529 conversas** especializadas
+- **2.221 menções** ao ControlLab
+- **265 referências pedagógicas**
+- **19 tipos diferentes** de interação
+
+### Qualidade Pedagógica
+- Score pedagógico médio: 1.44
+- Score técnico médio: 5.32
+- Cobertura completa dos módulos ControlLab
+
+## ⚙️ Configuração Avançada
+
+### Parâmetros de Treinamento
+```yaml
+model_type: phi3_mini
+base_model: microsoft/Phi-3-mini-4k-instruct
+method: lora
+batch_size: 4
+learning_rate: 1e-4
+num_epochs: 3
+```
+
+### Otimizações LoRA
+```yaml
+r: 64
+alpha: 128
+dropout: 0.1
+target_modules: [q_proj, k_proj, v_proj, o_proj]
+```
+
+## 🔍 Validação e Testes
+
+### Verificar Sistema
+```bash
+python validate_finetuning_setup.py
+```
+
+### Métricas de Qualidade
+- Validação estrutural do dataset
+- Análise de conteúdo pedagógico
+- Verificação de dependências
+- Estimativa de tempo de treinamento
+
+## 🌐 Interface Web
+
+### Acesso
+- **URL**: http://localhost:8000
+- **Interface**: Responsiva e moderna
+- **Recursos**: Chat, análise, resolução, explicação
+
+### Endpoints API
+- `POST /api/chat` - Conversa livre
+- `POST /api/analyze-code` - Análise de código
+- `POST /api/solve-problem` - Resolução de problemas
+- `POST /api/explain-concept` - Explicação de conceitos
+
+## 📝 Exemplos de Uso
+
+### Análise de Estabilidade
+```python
+# Cole este código na interface para análise
+from controllab.analysis import RouthHurwitzAnalyzer
+
+analyzer = RouthHurwitzAnalyzer()
+system = analyzer.from_coefficients([1, 2, 3, 4])
+result = analyzer.analyze_stability()
+print(result.explanation)
+```
+
+### Projeto de Controlador
+```
+Pergunta: "Como projetar um controlador PID para um sistema de segunda ordem?"
+
+O assistente fornecerá:
+1. Fundamentação teórica
+2. Metodologia passo a passo
+3. Código ControlLab executável
+4. Análise dos resultados
+5. Interpretação física
+```
+
+## 🐛 Troubleshooting
+
+### Modelo Não Carrega
+- Verificar se treinamento foi concluído
+- Confirmar arquivos em `controllab-phi3-lora/`
+- Checar logs em `logs/`
+
+### Erro de Memória
+- Reduzir batch_size na configuração
+- Usar gradient_checkpointing=True
+- Considerar treinamento em CPU
+
+### Interface Não Conecta
+- Verificar porta 8000 disponível
+- Confirmar firewall/antivírus
+- Testar em http://127.0.0.1:8000
+
+## 🤝 Contribuição
+
+### Melhorar Dataset
+1. Adicionar mais exemplos pedagógicos
+2. Incluir casos especiais TDAH
+3. Expandir cobertura de conceitos
+
+### Otimizar Modelo
+1. Ajustar hiperparâmetros
+2. Experimentar outras arquiteturas
+3. Validar com usuários reais
+
+## 📄 Licença
+
+Este projeto está licenciado sob MIT License - veja LICENSE para detalhes.
+
+## 📞 Suporte
+
+Para dúvidas sobre o ControlLab AI Assistant:
+1. Verifique este README
+2. Execute `validate_finetuning_setup.py`
+3. Consulte logs em `logs/`
+
+---
+
+**🎓 Desenvolvido para democratizar o ensino de engenharia de controle através de IA pedagógica e inclusiva.**

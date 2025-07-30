@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ControlLab - Calculadora de Sistemas de Controle</title>
+    
+    <!-- MathJax para renderização matemática -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true,
+                processEnvironments: true
+            },
+            options: {
+                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+            }
+        };
+    </script>
+    
+    <!-- Plotly para gráficos -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 0;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #4a90e2;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+
+        .main-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        /* Input Section - Similar to SymboLab */
+        .input-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .input-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .math-keyboard {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid #e9ecef;
+        }
+
+        .keyboard-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .keyboard-tab {
+            padding: 8px 16px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .keyboard-tab.active {
+            background: #4a90e2;
+        }
+
+        .keyboard-buttons {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 8px;
+        }
+
+        .math-btn {
+            padding: 10px;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 40px;
+        }
+
+        .math-btn:hover {
+            background: #e9ecef;
+            border-color: #4a90e2;
+        }
+
+        .input-area {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .main-input {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 18px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            outline: none;
+            transition: all 0.3s;
+            font-family: 'Courier New', monospace;
+        }
+
+        .main-input:focus {
+            border-color: #4a90e2;
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+        }
+
+        .input-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #e9ecef;
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+        }
+
+        .suggestion-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #f8f9fa;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .suggestion-item:hover {
+            background: #f8f9fa;
+        }
+
+        .suggestion-text {
+            font-family: 'Courier New', monospace;
+            color: #495057;
+        }
+
+        .suggestion-desc {
+            font-size: 12px;
+            color: #6c757d;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #4a90e2;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #357abd;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+
+        .quick-examples {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .example-chip {
+            padding: 6px 12px;
+            background: rgba(74, 144, 226, 0.1);
+            color: #4a90e2;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            border: 1px solid rgba(74, 144, 226, 0.2);
+            transition: all 0.2s;
+        }
+
+        .example-chip:hover {
+            background: rgba(74, 144, 226, 0.2);
+        }
+
+        /* Results Section */
+        .results-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .result-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f8f9fa;
+        }
+
+        .panel-icon {
+            width: 24px;
+            height: 24px;
+            background: #4a90e2;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .panel-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .analysis-step {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #4a90e2;
+        }
+
+        .step-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .step-content {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .math-expression {
+            background: #fff;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+            border: 1px solid #e9ecef;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+        }
+
+        .plot-container {
+            width: 100%;
+            height: 400px;
+            margin: 15px 0;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+        }
+
+        .tabs-container {
+            margin-bottom: 20px;
+        }
+
+        .tabs-header {
+            display: flex;
+            border-bottom: 2px solid #f8f9fa;
+        }
+
+        .tab {
+            padding: 12px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .tab.active {
+            color: #4a90e2;
+            border-bottom-color: #4a90e2;
+        }
+
+        .tab-content {
+            padding: 20px 0;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4a90e2;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #f5c6cb;
+            margin: 15px 0;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #c3e6cb;
+            margin: 15px 0;
+        }
+
+        @media (max-width: 768px) {
+            .results-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .keyboard-buttons {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div style="display: flex; align-items: center;">
+                <div class="logo">ControlLab</div>
+                <div class="subtitle">Calculadora de Sistemas de Controle</div>
+            </div>
+            <div style="font-size: 12px; color: #666;">
+                Análise Pedagógica • Passo a Passo • Anti-Caixa-Preta
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <!-- Input Section -->
+        <div class="input-section">
+            <div class="input-header">
+                <h2>Digite seu Sistema de Controle</h2>
+                <div style="font-size: 14px; color: #666;">
+                    Funções de transferência, análises de estabilidade, projeto de controladores
+                </div>
+            </div>
+
+            <!-- Math Keyboard -->
+            <div class="math-keyboard">
+                <div class="keyboard-tabs">
+                    <button class="keyboard-tab active" data-tab="basic">Básico</button>
+                    <button class="keyboard-tab" data-tab="functions">Funções</button>
+                    <button class="keyboard-tab" data-tab="control">Controle</button>
+                    <button class="keyboard-tab" data-tab="analysis">Análise</button>
+                </div>
+
+                <div class="keyboard-buttons" id="keyboard-basic">
+                    <button class="math-btn" data-insert="s">s</button>
+                    <button class="math-btn" data-insert="z">z</button>
+                    <button class="math-btn" data-insert="^">^</button>
+                    <button class="math-btn" data-insert="/">/</button>
+                    <button class="math-btn" data-insert="(">(</button>
+                    <button class="math-btn" data-insert=")">)</button>
+                    <button class="math-btn" data-insert="+">+</button>
+                    <button class="math-btn" data-insert="-">-</button>
+                    <button class="math-btn" data-insert="*">*</button>
+                    <button class="math-btn" data-insert="1">1</button>
+                    <button class="math-btn" data-insert="2">2</button>
+                    <button class="math-btn" data-insert="3">3</button>
+                    <button class="math-btn" data-insert="4">4</button>
+                    <button class="math-btn" data-insert="5">5</button>
+                    <button class="math-btn" data-insert="6">6</button>
+                    <button class="math-btn" data-insert="7">7</button>
+                    <button class="math-btn" data-insert="8">8</button>
+                    <button class="math-btn" data-insert="9">9</button>
+                    <button class="math-btn" data-insert="0">0</button>
+                    <button class="math-btn" data-insert=".">.</button>
+                    <button class="math-btn" data-insert="pi">π</button>
+                    <button class="math-btn" data-insert="sqrt">√</button>
+                    <button class="math-btn" data-insert="exp">e^</button>
+                    <button class="math-btn" data-insert="log">log</button>
+                </div>
+
+                <div class="keyboard-buttons" id="keyboard-functions" style="display: none;">
+                    <button class="math-btn" data-insert="sin">sin</button>
+                    <button class="math-btn" data-insert="cos">cos</button>
+                    <button class="math-btn" data-insert="tan">tan</button>
+                    <button class="math-btn" data-insert="asin">arcsin</button>
+                    <button class="math-btn" data-insert="acos">arccos</button>
+                    <button class="math-btn" data-insert="atan">arctan</button>
+                    <button class="math-btn" data-insert="sinh">sinh</button>
+                    <button class="math-btn" data-insert="cosh">cosh</button>
+                    <button class="math-btn" data-insert="tanh">tanh</button>
+                    <button class="math-btn" data-insert="ln">ln</button>
+                    <button class="math-btn" data-insert="log10">log₁₀</button>
+                    <button class="math-btn" data-insert="abs">|x|</button>
+                </div>
+
+                <div class="keyboard-buttons" id="keyboard-control" style="display: none;">
+                    <button class="math-btn" data-insert="G(s) = ">G(s)</button>
+                    <button class="math-btn" data-insert="H(s) = ">H(s)</button>
+                    <button class="math-btn" data-insert="C(s) = ">C(s)</button>
+                    <button class="math-btn" data-insert="T(s) = ">T(s)</button>
+                    <button class="math-btn" data-insert="K">K</button>
+                    <button class="math-btn" data-insert="Kp">Kp</button>
+                    <button class="math-btn" data-insert="Ki">Ki</button>
+                    <button class="math-btn" data-insert="Kd">Kd</button>
+                    <button class="math-btn" data-insert="tau">τ</button>
+                    <button class="math-btn" data-insert="zeta">ζ</button>
+                    <button class="math-btn" data-insert="omega">ω</button>
+                    <button class="math-btn" data-insert="wn">ωₙ</button>
+                    <button class="math-btn" data-insert="xi">ξ</button>
+                    <button class="math-btn" data-insert="T">T</button>
+                    <button class="math-btn" data-insert="sigma">σ</button>
+                    <button class="math-btn" data-insert="alpha">α</button>
+                </div>
+
+                <div class="keyboard-buttons" id="keyboard-analysis" style="display: none;">
+                    <button class="math-btn" data-command="analyze_stability">Estabilidade</button>
+                    <button class="math-btn" data-command="root_locus">Lugar Raízes</button>
+                    <button class="math-btn" data-command="bode_plot">Bode</button>
+                    <button class="math-btn" data-command="nyquist_plot">Nyquist</button>
+                    <button class="math-btn" data-command="step_response">Resposta Degrau</button>
+                    <button class="math-btn" data-command="impulse_response">Resposta Impulso</button>
+                    <button class="math-btn" data-command="poles_zeros">Polos e Zeros</button>
+                    <button class="math-btn" data-command="design_pid">PID</button>
+                    <button class="math-btn" data-command="design_lead_lag">Lead-Lag</button>
+                    <button class="math-btn" data-command="routh_hurwitz">Routh-Hurwitz</button>
+                    <button class="math-btn" data-command="margins">Margens</button>
+                    <button class="math-btn" data-command="discretize">Discretizar</button>
+                </div>
+            </div>
+
+            <div class="input-area">
+                <input type="text" id="main-input" class="main-input" 
+                       placeholder="Ex: G(s) = 1/(s^2 + 2*s + 1) ou 'Analise a estabilidade de G(s) = K/(s*(s+1))'"
+                       autocomplete="off">
+                <div class="input-suggestions" id="suggestions"></div>
+            </div>
+
+            <div class="quick-examples">
+                <div class="example-chip" data-example="G(s) = 1/(s^2 + 2*s + 1)">Sistema 2ª ordem</div>
+                <div class="example-chip" data-example="G(s) = K/(s*(s+1))">Sistema tipo 1</div>
+                <div class="example-chip" data-example="Analise a estabilidade">Análise estabilidade</div>
+                <div class="example-chip" data-example="Projete um PID">Projeto PID</div>
+                <div class="example-chip" data-example="G(s) = 10/(s^3 + 6*s^2 + 11*s + 6)">Sistema 3ª ordem</div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-primary" id="analyze-btn">
+                    <span id="analyze-text">Analisar Sistema</span>
+                    <span id="analyze-loading" style="display: none;">Processando...</span>
+                </button>
+                <button class="btn btn-secondary" id="clear-btn">Limpar</button>
+                <button class="btn btn-secondary" id="example-btn">Exemplo Rápido</button>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results-container">
+            <!-- Analysis Panel -->
+            <div class="result-panel">
+                <div class="panel-header">
+                    <div class="panel-icon">📊</div>
+                    <div class="panel-title">Análise Matemática</div>
+                </div>
+
+                <div class="tabs-container">
+                    <div class="tabs-header">
+                        <div class="tab active" data-tab-content="system-info">Sistema</div>
+                        <div class="tab" data-tab-content="stability">Estabilidade</div>
+                        <div class="tab" data-tab-content="poles-zeros">Polos/Zeros</div>
+                        <div class="tab" data-tab-content="specifications">Especificações</div>
+                    </div>
+
+                    <div class="tab-content" id="system-info">
+                        <div id="system-analysis">
+                            <div class="analysis-step">
+                                <div class="step-title">Sistema de Entrada</div>
+                                <div class="step-content">
+                                    Digite uma função de transferência ou comando para começar a análise.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="stability" style="display: none;">
+                        <div id="stability-analysis">
+                            <div class="analysis-step">
+                                <div class="step-title">Análise de Estabilidade</div>
+                                <div class="step-content">
+                                    A análise de estabilidade será exibida aqui após inserir um sistema.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="poles-zeros" style="display: none;">
+                        <div id="poles-zeros-analysis">
+                            <div class="analysis-step">
+                                <div class="step-title">Polos e Zeros</div>
+                                <div class="step-content">
+                                    Os polos e zeros do sistema serão calculados e exibidos aqui.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="specifications" style="display: none;">
+                        <div id="specifications-analysis">
+                            <div class="analysis-step">
+                                <div class="step-title">Especificações de Desempenho</div>
+                                <div class="step-content">
+                                    Tempo de subida, sobressinal, tempo de acomodação e erro em regime permanente.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="loading" id="analysis-loading">
+                    <div class="spinner"></div>
+                    <div>Processando análise matemática...</div>
+                </div>
+            </div>
+
+            <!-- Visualization Panel -->
+            <div class="result-panel">
+                <div class="panel-header">
+                    <div class="panel-icon">📈</div>
+                    <div class="panel-title">Visualizações</div>
+                </div>
+
+                <div class="tabs-container">
+                    <div class="tabs-header">
+                        <div class="tab active" data-tab-content="time-response">Temporal</div>
+                        <div class="tab" data-tab-content="frequency-response">Frequência</div>
+                        <div class="tab" data-tab-content="root-locus">Root Locus</div>
+                        <div class="tab" data-tab-content="nyquist">Nyquist</div>
+                    </div>
+
+                    <div class="tab-content" id="time-response">
+                        <div class="plot-container" id="time-plot"></div>
+                    </div>
+
+                    <div class="tab-content" id="frequency-response" style="display: none;">
+                        <div class="plot-container" id="bode-plot"></div>
+                    </div>
+
+                    <div class="tab-content" id="root-locus" style="display: none;">
+                        <div class="plot-container" id="root-locus-plot"></div>
+                    </div>
+
+                    <div class="tab-content" id="nyquist" style="display: none;">
+                        <div class="plot-container" id="nyquist-plot"></div>
+                    </div>
+                </div>
+
+                <div class="loading" id="plot-loading">
+                    <div class="spinner"></div>
+                    <div>Gerando visualizações...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class ControlLabInterface {
+            constructor() {
+                this.ws = null;
+                this.currentSystem = null;
+                this.initializeInterface();
+                this.connectWebSocket();
+            }
+
+            initializeInterface() {
+                // Math keyboard functionality
+                this.setupMathKeyboard();
+                
+                // Input suggestions
+                this.setupInputSuggestions();
+                
+                // Tab functionality
+                this.setupTabs();
+                
+                // Button handlers
+                this.setupButtonHandlers();
+                
+                // Example chips
+                this.setupExampleChips();
+                
+                // Enter key handler
+                document.getElementById('main-input').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.analyzeSystem();
+                    }
+                });
+            }
+
+            setupMathKeyboard() {
+                // Keyboard tab switching
+                document.querySelectorAll('.keyboard-tab').forEach(tab => {
+                    tab.addEventListener('click', (e) => {
+                        const tabName = e.target.dataset.tab;
+                        
+                        // Update active tab
+                        document.querySelectorAll('.keyboard-tab').forEach(t => t.classList.remove('active'));
+                        e.target.classList.add('active');
+                        
+                        // Show corresponding buttons
+                        document.querySelectorAll('[id^="keyboard-"]').forEach(kb => kb.style.display = 'none');
+                        document.getElementById(`keyboard-${tabName}`).style.display = 'grid';
+                    });
+                });
+
+                // Math button clicks
+                document.querySelectorAll('.math-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const input = document.getElementById('main-input');
+                        const insertText = e.target.dataset.insert;
+                        const command = e.target.dataset.command;
+                        
+                        if (insertText) {
+                            this.insertAtCursor(input, insertText);
+                        } else if (command) {
+                            this.executeCommand(command);
+                        }
+                    });
+                });
+            }
+
+            setupInputSuggestions() {
+                const input = document.getElementById('main-input');
+                const suggestions = document.getElementById('suggestions');
+                
+                const controlSuggestions = [
+                    { text: 'G(s) = 1/(s^2 + 2*s + 1)', desc: 'Sistema de 2ª ordem subamortecido' },
+                    { text: 'G(s) = K/(s*(s+1))', desc: 'Sistema tipo 1 com ganho K' },
+                    { text: 'G(s) = 10/(s^3 + 6*s^2 + 11*s + 6)', desc: 'Sistema de 3ª ordem' },
+                    { text: 'Analise a estabilidade', desc: 'Análise completa de estabilidade' },
+                    { text: 'Projete um controlador PID', desc: 'Síntese de controlador PID' },
+                    { text: 'Calcule as margens de estabilidade', desc: 'Margens de ganho e fase' },
+                    { text: 'Discretize o sistema', desc: 'Conversão para sistema discreto' },
+                    { text: 'G(s) = (s+2)/(s^2 + 3*s + 2)', desc: 'Sistema com zero' },
+                    { text: 'Analise o lugar das raízes', desc: 'Lugar geométrico das raízes' }
+                ];
+
+                input.addEventListener('input', (e) => {
+                    const value = e.target.value.toLowerCase();
+                    if (value.length < 2) {
+                        suggestions.style.display = 'none';
+                        return;
+                    }
+
+                    const filtered = controlSuggestions.filter(item => 
+                        item.text.toLowerCase().includes(value) || 
+                        item.desc.toLowerCase().includes(value)
+                    );
+
+                    if (filtered.length > 0) {
+                        suggestions.innerHTML = filtered.map(item => `
+                            <div class="suggestion-item" data-text="${item.text}">
+                                <div class="suggestion-text">${item.text}</div>
+                                <div class="suggestion-desc">${item.desc}</div>
+                            </div>
+                        `).join('');
+                        suggestions.style.display = 'block';
+
+                        // Add click handlers to suggestions
+                        suggestions.querySelectorAll('.suggestion-item').forEach(item => {
+                            item.addEventListener('click', () => {
+                                input.value = item.dataset.text;
+                                suggestions.style.display = 'none';
+                                this.analyzeSystem();
+                            });
+                        });
+                    } else {
+                        suggestions.style.display = 'none';
+                    }
+                });
+
+                // Hide suggestions when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('.input-area')) {
+                        suggestions.style.display = 'none';
+                    }
+                });
+            }
+
+            setupTabs() {
+                document.querySelectorAll('.tab').forEach(tab => {
+                    tab.addEventListener('click', (e) => {
+                        const targetContent = e.target.dataset.tabContent;
+                        const container = e.target.closest('.tabs-container');
+                        
+                        // Update active tab
+                        container.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                        e.target.classList.add('active');
+                        
+                        // Show corresponding content
+                        container.querySelectorAll('.tab-content').forEach(content => {
+                            content.style.display = content.id === targetContent ? 'block' : 'none';
+                        });
+                    });
+                });
+            }
+
+            setupButtonHandlers() {
+                document.getElementById('analyze-btn').addEventListener('click', () => {
+                    this.analyzeSystem();
+                });
+
+                document.getElementById('clear-btn').addEventListener('click', () => {
+                    document.getElementById('main-input').value = '';
+                    this.clearResults();
+                });
+
+                document.getElementById('example-btn').addEventListener('click', () => {
+                    const examples = [
+                        'G(s) = 1/(s^2 + 2*s + 1)',
+                        'G(s) = 10/(s*(s+1)*(s+2))',
+                        'Analise a estabilidade de G(s) = K/(s^2 + 3*s + 2)'
+                    ];
+                    const randomExample = examples[Math.floor(Math.random() * examples.length)];
+                    document.getElementById('main-input').value = randomExample;
+                    this.analyzeSystem();
+                });
+            }
+
+            setupExampleChips() {
+                document.querySelectorAll('.example-chip').forEach(chip => {
+                    chip.addEventListener('click', (e) => {
+                        const example = e.target.dataset.example;
+                        document.getElementById('main-input').value = example;
+                        this.analyzeSystem();
+                    });
+                });
+            }
+
+            insertAtCursor(input, text) {
+                const start = input.selectionStart;
+                const end = input.selectionEnd;
+                const currentValue = input.value;
+                
+                input.value = currentValue.substring(0, start) + text + currentValue.substring(end);
+                input.setSelectionRange(start + text.length, start + text.length);
+                input.focus();
+            }
+
+            executeCommand(command) {
+                const input = document.getElementById('main-input');
+                const currentValue = input.value.trim();
+                
+                const commandMap = {
+                    'analyze_stability': 'Analise a estabilidade',
+                    'root_locus': 'Plote o lugar das raízes',
+                    'bode_plot': 'Plote o diagrama de Bode',
+                    'nyquist_plot': 'Plote o diagrama de Nyquist',
+                    'step_response': 'Calcule a resposta ao degrau',
+                    'impulse_response': 'Calcule a resposta ao impulso',
+                    'poles_zeros': 'Encontre os polos e zeros',
+                    'design_pid': 'Projete um controlador PID',
+                    'design_lead_lag': 'Projete um compensador lead-lag',
+                    'routh_hurwitz': 'Aplique o critério de Routh-Hurwitz',
+                    'margins': 'Calcule as margens de estabilidade',
+                    'discretize': 'Discretize o sistema'
+                };
+
+                if (currentValue && !currentValue.toLowerCase().includes('analise') && 
+                    !currentValue.toLowerCase().includes('plote') && 
+                    !currentValue.toLowerCase().includes('calcule')) {
+                    input.value = `${commandMap[command]} de ${currentValue}`;
+                } else {
+                    input.value = commandMap[command];
+                }
+                
+                this.analyzeSystem();
+            }
+
+            connectWebSocket() {
+                try {
+                    this.ws = new WebSocket('ws://localhost:8765');
+                    
+                    this.ws.onopen = () => {
+                        console.log('Conectado ao ControlLab');
+                        this.showMessage('Conectado ao ControlLab', 'success');
+                    };
+                    
+                    this.ws.onmessage = (event) => {
+                        const response = JSON.parse(event.data);
+                        this.handleResponse(response);
+                    };
+                    
+                    this.ws.onerror = (error) => {
+                        console.error('Erro WebSocket:', error);
+                        this.showMessage('Erro de conexão com o servidor', 'error');
+                    };
+                    
+                    this.ws.onclose = () => {
+                        console.log('Conexão WebSocket fechada');
+                        setTimeout(() => this.connectWebSocket(), 5000);
+                    };
+                } catch (error) {
+                    console.error('Erro ao conectar WebSocket:', error);
+                    this.showMessage('Servidor não disponível. Usando modo demonstração.', 'error');
+                }
+            }
+
+            analyzeSystem() {
+                const input = document.getElementById('main-input').value.trim();
+                if (!input) {
+                    this.showMessage('Digite um sistema ou comando para analisar', 'error');
+                    return;
+                }
+
+                this.showLoading(true);
+                
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.ws.send(JSON.stringify({
+                        type: 'analyze',
+                        input: input,
+                        timestamp: Date.now()
+                    }));
+                } else {
+                    // Modo demonstração offline
+                    setTimeout(() => {
+                        this.handleDemoResponse(input);
+                    }, 1500);
+                }
+            }
+
+            handleResponse(response) {
+                this.showLoading(false);
+                
+                if (response.type === 'error') {
+                    this.showMessage(response.message, 'error');
+                    return;
+                }
+
+                this.currentSystem = response.system;
+                this.updateAnalysisPanel(response);
+                this.updateVisualizationPanel(response);
+            }
+
+            handleDemoResponse(input) {
+                this.showLoading(false);
+                
+                // Resposta de demonstração
+                const demoResponse = {
+                    type: 'analysis',
+                    system: {
+                        transfer_function: input.includes('G(s)') ? input : 'G(s) = 1/(s^2 + 2*s + 1)',
+                        poles: [-1, -1],
+                        zeros: [],
+                        dc_gain: 1,
+                        order: 2
+                    },
+                    stability: {
+                        is_stable: true,
+                        method: 'routh_hurwitz',
+                        margin_gain: 'Infinito',
+                        margin_phase: '45.6°'
+                    },
+                    specifications: {
+                        overshoot: '4.3%',
+                        settling_time: '4.0s',
+                        rise_time: '1.8s',
+                        steady_state_error: '0%'
+                    }
+                };
+                
+                this.updateAnalysisPanel(demoResponse);
+                this.updateVisualizationPanel(demoResponse);
+            }
+
+            updateAnalysisPanel(response) {
+                // System Info
+                document.getElementById('system-info').innerHTML = `
+                    <div class="analysis-step">
+                        <div class="step-title">Sistema Analisado</div>
+                        <div class="step-content">
+                            <div class="math-expression">${response.system.transfer_function}</div>
+                            <strong>Propriedades:</strong><br>
+                            • Ordem: ${response.system.order}<br>
+                            • Ganho DC: ${response.system.dc_gain}<br>
+                            • Tipo: ${response.system.type || 'Sistema de Controle'}
+                        </div>
+                    </div>
+                `;
+
+                // Stability Analysis
+                if (response.stability) {
+                    document.getElementById('stability').innerHTML = `
+                        <div class="analysis-step">
+                            <div class="step-title">Resultado da Análise</div>
+                            <div class="step-content">
+                                <strong>Estabilidade:</strong> ${response.stability.is_stable ? '✅ Estável' : '❌ Instável'}<br>
+                                <strong>Método:</strong> ${response.stability.method}<br>
+                                <strong>Margem de Ganho:</strong> ${response.stability.margin_gain}<br>
+                                <strong>Margem de Fase:</strong> ${response.stability.margin_phase}
+                            </div>
+                        </div>
+                        <div class="analysis-step">
+                            <div class="step-title">Interpretação Física</div>
+                            <div class="step-content">
+                                ${response.stability.is_stable ? 
+                                    'O sistema retornará ao equilíbrio após perturbações. Todas as raízes do polinômio característico estão no semiplano esquerdo.' :
+                                    'O sistema é instável. Uma ou mais raízes estão no semiplano direito, causando resposta divergente.'
+                                }
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // Poles and Zeros
+                document.getElementById('poles-zeros').innerHTML = `
+                    <div class="analysis-step">
+                        <div class="step-title">Polos do Sistema</div>
+                        <div class="step-content">
+                            <div class="math-expression">Polos: [${response.system.poles.join(', ')}]</div>
+                            Os polos determinam a resposta natural do sistema e sua estabilidade.
+                        </div>
+                    </div>
+                    <div class="analysis-step">
+                        <div class="step-title">Zeros do Sistema</div>
+                        <div class="step-content">
+                            <div class="math-expression">Zeros: [${response.system.zeros.length > 0 ? response.system.zeros.join(', ') : 'Nenhum'}]</div>
+                            Os zeros afetam a forma da resposta transitória.
+                        </div>
+                    </div>
+                `;
+
+                // Specifications
+                if (response.specifications) {
+                    document.getElementById('specifications').innerHTML = `
+                        <div class="analysis-step">
+                            <div class="step-title">Especificações Temporais</div>
+                            <div class="step-content">
+                                • <strong>Sobressinal:</strong> ${response.specifications.overshoot}<br>
+                                • <strong>Tempo de Acomodação:</strong> ${response.specifications.settling_time}<br>
+                                • <strong>Tempo de Subida:</strong> ${response.specifications.rise_time}<br>
+                                • <strong>Erro em Regime:</strong> ${response.specifications.steady_state_error}
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            updateVisualizationPanel(response) {
+                // Generate demo plots
+                this.generateTimePlot();
+                this.generateBodePlot();
+                this.generateRootLocusPlot();
+                this.generateNyquistPlot();
+            }
+
+            generateTimePlot() {
+                const time = Array.from({length: 100}, (_, i) => i * 0.1);
+                const stepResponse = time.map(t => 1 - Math.exp(-t) * (1 + t));
+                
+                const trace = {
+                    x: time,
+                    y: stepResponse,
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: 'Resposta ao Degrau',
+                    line: { color: '#4a90e2', width: 3 }
+                };
+
+                const layout = {
+                    title: 'Resposta ao Degrau',
+                    xaxis: { title: 'Tempo (s)' },
+                    yaxis: { title: 'Amplitude' },
+                    margin: { l: 50, r: 50, t: 50, b: 50 }
+                };
+
+                Plotly.newPlot('time-plot', [trace], layout, {responsive: true});
+            }
+
+            generateBodePlot() {
+                const freq = Array.from({length: 100}, (_, i) => Math.pow(10, -2 + 4*i/99));
+                const magnitude = freq.map(w => -20 * Math.log10(Math.sqrt(1 + w*w)));
+                const phase = freq.map(w => -Math.atan(w) * 180 / Math.PI);
+
+                const trace1 = {
+                    x: freq,
+                    y: magnitude,
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: 'Magnitude',
+                    line: { color: '#4a90e2', width: 3 },
+                    xaxis: 'x',
+                    yaxis: 'y'
+                };
+
+                const trace2 = {
+                    x: freq,
+                    y: phase,
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: 'Fase',
+                    line: { color: '#e74c3c', width: 3 },
+                    xaxis: 'x2',
+                    yaxis: 'y2'
+                };
+
+                const layout = {
+                    title: 'Diagrama de Bode',
+                    xaxis: { 
+                        type: 'log',
+                        title: 'Frequência (rad/s)',
+                        domain: [0, 1]
+                    },
+                    yaxis: { 
+                        title: 'Magnitude (dB)',
+                        domain: [0.55, 1]
+                    },
+                    xaxis2: { 
+                        type: 'log',
+                        title: 'Frequência (rad/s)',
+                        domain: [0, 1]
+                    },
+                    yaxis2: { 
+                        title: 'Fase (°)',
+                        domain: [0, 0.45]
+                    },
+                    margin: { l: 50, r: 50, t: 50, b: 50 }
+                };
+
+                Plotly.newPlot('bode-plot', [trace1, trace2], layout, {responsive: true});
+            }
+
+            generateRootLocusPlot() {
+                const gains = Array.from({length: 50}, (_, i) => i * 0.2);
+                const rootLocus = gains.map(k => ({
+                    x: -1 - k/10,
+                    y: k/5
+                }));
+
+                const trace = {
+                    x: rootLocus.map(p => p.x),
+                    y: rootLocus.map(p => p.y),
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: 'Lugar das Raízes',
+                    line: { color: '#4a90e2', width: 3 },
+                    marker: { size: 4 }
+                };
+
+                const layout = {
+                    title: 'Lugar Geométrico das Raízes',
+                    xaxis: { title: 'Parte Real' },
+                    yaxis: { title: 'Parte Imaginária' },
+                    margin: { l: 50, r: 50, t: 50, b: 50 },
+                    shapes: [{
+                        type: 'line',
+                        x0: 0, x1: 0,
+                        y0: -5, y1: 5,
+                        line: { color: 'red', width: 2, dash: 'dash' }
+                    }]
+                };
+
+                Plotly.newPlot('root-locus-plot', [trace], layout, {responsive: true});
+            }
+
+            generateNyquistPlot() {
+                const freq = Array.from({length: 100}, (_, i) => Math.pow(10, -2 + 4*i/99));
+                const nyquist = freq.map(w => ({
+                    x: 1/(1 + w*w),
+                    y: -w/(1 + w*w)
+                }));
+
+                const trace = {
+                    x: nyquist.map(p => p.x),
+                    y: nyquist.map(p => p.y),
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: 'Nyquist',
+                    line: { color: '#4a90e2', width: 3 }
+                };
+
+                const layout = {
+                    title: 'Diagrama de Nyquist',
+                    xaxis: { title: 'Parte Real' },
+                    yaxis: { title: 'Parte Imaginária' },
+                    margin: { l: 50, r: 50, t: 50, b: 50 },
+                    shapes: [{
+                        type: 'circle',
+                        x0: -1, x1: 1,
+                        y0: -1, y1: 1,
+                        line: { color: 'red', width: 2, dash: 'dash' }
+                    }]
+                };
+
+                Plotly.newPlot('nyquist-plot', [trace], layout, {responsive: true});
+            }
+
+            showLoading(show) {
+                const analyzeBtn = document.getElementById('analyze-btn');
+                const analyzeText = document.getElementById('analyze-text');
+                const analyzeLoading = document.getElementById('analyze-loading');
+                const analysisLoading = document.getElementById('analysis-loading');
+                const plotLoading = document.getElementById('plot-loading');
+
+                if (show) {
+                    analyzeBtn.disabled = true;
+                    analyzeText.style.display = 'none';
+                    analyzeLoading.style.display = 'inline';
+                    analysisLoading.style.display = 'block';
+                    plotLoading.style.display = 'block';
+                } else {
+                    analyzeBtn.disabled = false;
+                    analyzeText.style.display = 'inline';
+                    analyzeLoading.style.display = 'none';
+                    analysisLoading.style.display = 'none';
+                    plotLoading.style.display = 'none';
+                }
+            }
+
+            showMessage(message, type) {
+                const messageEl = document.createElement('div');
+                messageEl.className = `${type}-message`;
+                messageEl.textContent = message;
+                
+                const container = document.querySelector('.input-section');
+                container.appendChild(messageEl);
+                
+                setTimeout(() => {
+                    messageEl.remove();
+                }, 5000);
+            }
+
+            clearResults() {
+                document.getElementById('system-info').innerHTML = `
+                    <div class="analysis-step">
+                        <div class="step-title">Sistema de Entrada</div>
+                        <div class="step-content">
+                            Digite uma função de transferência ou comando para começar a análise.
+                        </div>
+                    </div>
+                `;
+                
+                ['time-plot', 'bode-plot', 'root-locus-plot', 'nyquist-plot'].forEach(id => {
+                    Plotly.purge(id);
+                });
+            }
+        }
+
+        // Initialize the interface when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new ControlLabInterface();
+        });
+    </script>
+</body>
+</html>

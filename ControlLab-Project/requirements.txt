@@ -1,0 +1,13 @@
+# ControlLab - Dependências Principais
+# Computação Simbólica
+sympy>=1.12
+
+# Arrays Numéricos e Algoritmos Científicos
+numpy>=1.24
+scipy>=1.10
+
+# Controle de Sistemas
+control>=0.10
+
+# Visualização
+plotly>=5.15
