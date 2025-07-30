@@ -60,6 +60,7 @@ src/controllab/numerical/interface.py
 src/controllab/numerical/performance.py
 src/controllab/numerical/validation.py
 tests/test_app.py
+tests/test_direct_stability.py
 tests/test_frequency_response.py
 tests/test_interoperability.py
 tests/test_numerical_interface.py

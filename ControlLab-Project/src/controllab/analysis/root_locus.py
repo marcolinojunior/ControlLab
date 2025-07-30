@@ -198,7 +198,8 @@ class RootLocusAnalyzer:
             self.history.features = features
             features.analysis_history = self.history  # Atribuir histórico
 
-        return features
+        is_stable = self._is_stable_from_root_locus(tf_obj)
+        return features, is_stable
 
     def _is_stable_from_root_locus(self, tf_obj: SymbolicTransferFunction) -> bool:
         """
