@@ -1,106 +1,160 @@
 <template>
-  <div class="input-control-panel">
-    <h2>Analisador de Sistemas de Controle</h2>
-    <p>Digite uma função de transferência ou um comando para iniciar a análise.</p>
-    <div class="input-area">
-      <textarea
-        v-model="userInput"
-        class="main-input"
-        placeholder="Ex: G(s) = 1/(s^2 + 2*s + 1)"
-        @keyup.enter="submitQuery"
-      ></textarea>
-      <button @click="submitQuery" class="analyze-button" :disabled="isLoading">
-        {{ isLoading ? 'Analisando...' : 'Analisar' }}
-      </button>
+  <div>
+    <div class="tool-panel">
+      <button @click="addTransferFunction">Função de Transferência</button>
+      <button @click="appendToCommand(' | step_response')">Resposta ao Degrau</button>
+      <button @click="appendToCommand(' | bode_plot')">Diagrama de Bode</button>
+      <button @click="appendToCommand(' | root_locus')">Lugar das Raízes</button>
     </div>
+
+    <div class="input-area">
+      <input v-model="command" @keyup.enter="sendCommand" placeholder="Construa seu comando aqui..." class="main-input" />
+      <button @click="sendCommand" class="execute-button">Executar</button>
+    </div>
+
+    <div class="latex-preview" ref="latexPreview"></div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
 
-const userInput = ref('');
-const isLoading = ref(false);
+const command = ref('');
+const latexPreview = ref<HTMLDivElement | null>(null);
 
-const emit = defineEmits(['query-submitted']);
+const emit = defineEmits(['command']);
 
-const submitQuery = () => {
-  if (userInput.value.trim()) {
-    emit('query-submitted', userInput.value);
+function appendToCommand(text: string) {
+  // Add a space if the command is not empty and doesn't already have one
+  if (command.value.length > 0 && !command.value.endsWith(' ')) {
+    command.value += ' ';
   }
-};
+  command.value += text;
+}
 
-// Method to update loading state, can be called by parent
-const setLoading = (loading: boolean) => {
-  isLoading.value = loading;
-};
+function addTransferFunction() {
+  // Simulação: em um caso real, isso abriria um modal
+  const num = prompt("Digite o numerador (ex: 1):", "1");
+  const den = prompt("Digite o denominador (ex: 1,2,5):", "1,2,5");
+  if (num && den) {
+    // Overwrite the command with the new transfer function
+    command.value = `G = tf([${num}], [${den}])`;
+  }
+}
 
-// Expose the setLoading method to the parent component
-defineExpose({ setLoading });
+function sendCommand() {
+  emit('command', command.value);
+}
+
+// Assista a mudanças no comando e atualize a pré-visualização
+watch(command, (newCommand) => {
+  if (latexPreview.value) {
+    try {
+      // Tenta renderizar o comando inteiro. KaTeX vai ignorar o que não for matemática.
+      // We'll wrap the non-pipe parts in LaTeX delimiters to render them.
+      const parts = newCommand.split('|').map(part => part.trim());
+      const latexString = parts.map(part => {
+        if (part.includes('tf') || part.includes('ss')) {
+          // Attempt to convert Python list syntax to matrix syntax for better rendering
+          let processedPart = part.replace(/tf\(\[/g, 'tf([').replace(/\]\)/g, '])');
+          processedPart = processedPart.replace(/\[/g, '{').replace(/\]/g, '}');
+          return `$$${processedPart}$$`;
+        }
+        return part;
+      }).join(' \\ | \\ ');
+
+      katex.render(latexString, latexPreview.value, {
+        throwOnError: false,
+        displayMode: true
+      });
+    } catch (e) {
+      if (e instanceof Error) {
+        latexPreview.value.innerHTML = `<span style="color: #fb5607;">Erro de sintaxe KaTeX: ${e.message}</span>`;
+      } else {
+        latexPreview.value.innerHTML = `<span style="color: #fb5607;">Erro de sintaxe KaTeX</span>`;
+      }
+    }
+  }
+});
+
 </script>
 
 <style scoped>
-.input-control-panel {
-  background-color: #ffffff;
-  padding: 2rem;
-  border-radius: 12px;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.07);
+.tool-panel {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
 }
 
-h2 {
-  margin-top: 0;
-  margin-bottom: 0.5rem;
-  color: #343a40;
+.tool-panel button {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #fff;
+  background-color: #8338ec; /* Azul Violeta */
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
 
-p {
-  margin-bottom: 1.5rem;
-  color: #6c757d;
+.tool-panel button:hover {
+  background-color: #6d1fe5;
 }
 
 .input-area {
   display: flex;
   gap: 1rem;
+  margin-bottom: 1rem;
 }
 
 .main-input {
   flex-grow: 1;
   padding: 0.75rem 1rem;
   font-family: 'Courier New', Courier, monospace;
-  font-size: 1rem;
-  border: 1px solid #ced4da;
+  font-size: 1.1rem;
+  color: #fff;
+  background-color: #242424;
+  border: 1px solid #444;
   border-radius: 8px;
-  resize: vertical;
-  min-height: 50px;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .main-input:focus {
   outline: none;
-  border-color: #3a86ff; /* Azure */
-  box-shadow: 0 0 0 3px rgba(58, 134, 255, 0.2);
+  border-color: #ffbe0b; /* Amarelo Âmbar */
+  box-shadow: 0 0 0 3px rgba(255, 190, 11, 0.2);
 }
 
-.analyze-button {
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #fff;
-  background-color: #3a86ff; /* Azure */
+.execute-button {
+  padding: 0.75rem 2rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #000;
+  background-color: #ffbe0b; /* Amarelo Âmbar */
   border: none;
   border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.2s, transform 0.1s;
 }
 
-.analyze-button:hover {
-  background-color: #005ff9; /* Darker Azure */
+.execute-button:hover {
+  background-color: #fca311;
   transform: translateY(-1px);
 }
 
-.analyze-button:disabled {
-  background-color: #6c757d;
-  cursor: not-allowed;
-  transform: translateY(0);
+.latex-preview {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  min-height: 50px;
+  background-color: #242424;
+  border: 1px dashed #444;
+  border-radius: 8px;
+  color: #ffbe0b; /* Amarelo Âmbar */
+  font-size: 1.2rem;
+  text-align: center;
+  overflow-x: auto;
 }
 </style>

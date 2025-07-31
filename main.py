@@ -1,131 +1,99 @@
-import argparse
-import inspect
-from typing import List, get_origin
+import asyncio
+import json
+import websockets
+import control as ct
+import numpy as np
+import sympy as sp
 
-import controllab.analysis
-import controllab.core
-import controllab.design
-import controllab.modeling
-import controllab.numerical
+# Import the response formatter we will create
+from type_handler import format_response
 
-def build_cli():
+# All functions from the control library that are safe to expose
+SAFE_CONTROL_FUNCTIONS = {
+    'tf': ct.tf,
+    'ss': ct.ss,
+    'step_response': ct.step_info,
+    'bode_plot': lambda sys, **kwargs: ct.bode_plot(sys, plot=False, **kwargs),
+    'root_locus': lambda sys, **kwargs: ct.root_locus(sys, plot=False, **kwargs),
+    'nyquist_plot': lambda sys, **kwargs: ct.nyquist_plot(sys, plot=False, **kwargs),
+    'margin': ct.margin,
+    'feedback': ct.feedback,
+    'series': ct.series,
+    'parallel': ct.parallel,
+}
+
+async def handler(websocket, path):
     """
-    Dynamically builds a CLI for the controllab library.
+    Handles a WebSocket connection. Each connection has its own session context.
     """
-    parser = argparse.ArgumentParser(description="A dynamically generated CLI for the controllab library.")
-    subparsers = parser.add_subparsers(dest="command", help="Available commands", required=True)
+    print("Cliente conectado.")
+    # Cada conexão tem seu próprio contexto para armazenar variáveis (G, H, etc.)
+    session_context = {
+        'ct': ct,
+        'np': np,
+        'sp': sp,
+        **SAFE_CONTROL_FUNCTIONS
+    }
 
-    modules_to_inspect = [
-        controllab.analysis,
-        controllab.core,
-        controllab.design,
-        controllab.modeling,
-        controllab.numerical,
-    ]
+    try:
+        async for message in websocket:
+            try:
+                data = json.loads(message)
+                commands = data.get('commands', [])
 
-    added_commands = set()
+                if not isinstance(commands, list):
+                    raise ValueError("A entrada 'commands' deve ser uma lista.")
 
-    for module in modules_to_inspect:
-        # Discover and add functions
-        for func_name, func_obj in inspect.getmembers(module, inspect.isfunction):
-            if not func_name.startswith('_') and func_obj.__module__.startswith(module.__name__):
-                if func_name not in added_commands:
-                    func_parser = subparsers.add_parser(func_name, help=f"Execute the '{func_name}' function from {module.__name__}.")
-                    sig = inspect.signature(func_obj)
-                    for param in sig.parameters.values():
-                        if param.name == 'self':
-                            continue
-                        arg_name = f'--{param.name}'
-                        arg_type = param.annotation if param.annotation != inspect.Parameter.empty else str
+                final_result = None
+                last_var_name = None
 
-                        # Use str for complex types for now
-                        if arg_type not in [str, int, float, bool]:
-                            arg_type = str
+                for cmd in commands:
+                    cmd = cmd.strip()
+                    if not cmd:
+                        continue
 
-                        is_list = get_origin(param.annotation) in (list, List)
-                        nargs = '+' if is_list else None
-
-                        if param.default == inspect.Parameter.empty:
-                            func_parser.add_argument(arg_name, type=arg_type, required=True, nargs=nargs)
+                    # Check for assignment to store the variable name
+                    if '=' in cmd:
+                        var_name = cmd.split('=')[0].strip()
+                        if not var_name.isidentifier():
+                            raise NameError(f"'{var_name}' não é um nome de variável válido.")
+                        exec(cmd, session_context)
+                        last_var_name = var_name
+                        final_result = f"Variável '{var_name}' definida."
+                    else:
+                        # This is an analysis command.
+                        # We need to handle cases like `bode` which might not have a system passed in.
+                        # A simple approach: if a function is called without args, apply it to the last defined system.
+                        if '(' not in cmd and ')' not in cmd and last_var_name:
+                            eval_cmd = f"{cmd}({last_var_name})"
                         else:
-                            if isinstance(param.default, bool) and not param.default:
-                                func_parser.add_argument(arg_name, action='store_true')
-                            else:
-                                func_parser.add_argument(arg_name, type=arg_type, default=param.default, nargs=nargs)
-                    func_parser.set_defaults(func=func_obj, is_method=False)
-                    added_commands.add(func_name)
+                            eval_cmd = cmd
 
-        # Discover and add classes and their methods
-        for class_name, class_obj in inspect.getmembers(module, inspect.isclass):
-            if not class_name.startswith('_') and class_obj.__module__.startswith(module.__name__):
-                for method_name, method_obj in inspect.getmembers(class_obj, inspect.isfunction):
-                    if not method_name.startswith('_'):
-                        command_name = f"{class_name}.{method_name}"
-                        if command_name not in added_commands:
-                            method_parser = subparsers.add_parser(command_name, help=f"Execute the '{method_name}' method of the '{class_name}' class.")
-                            method_parser.add_argument('--instance', type=str, required=True, help=f"String representation of the '{class_name}' instance.")
-                            sig = inspect.signature(method_obj)
-                            for param in sig.parameters.values():
-                                if param.name == 'self':
-                                    continue
-                                arg_name = f'--{param.name}'
-                                arg_type = param.annotation if param.annotation != inspect.Parameter.empty else str
+                        final_result = eval(eval_cmd, session_context)
 
-                                # Use str for complex types for now
-                                if arg_type not in [str, int, float, bool]:
-                                    arg_type = str
+                # Format the final result and send it back
+                response = format_response(final_result)
+                await websocket.send(json.dumps(response))
 
-                                is_list = get_origin(param.annotation) in (list, List)
-                                nargs = '+' if is_list else None
+            except Exception as e:
+                # Send error message back to the client
+                error_response = format_response(e, command=cmd if 'cmd' in locals() else 'N/A')
+                await websocket.send(json.dumps(error_response))
 
-                                if param.default == inspect.Parameter.empty:
-                                    method_parser.add_argument(arg_name, type=arg_type, required=True, nargs=nargs)
-                                else:
-                                    if isinstance(param.default, bool) and not param.default:
-                                        method_parser.add_argument(arg_name, action='store_true')
-                                    else:
-                                        method_parser.add_argument(arg_name, type=arg_type, default=param.default, nargs=nargs)
-                            method_parser.set_defaults(func=method_obj, is_method=True, class_obj=class_obj)
-                            added_commands.add(command_name)
+    except websockets.exceptions.ConnectionClosed:
+        print("Cliente desconectado.")
+    except Exception as e:
+        print(f"Erro inesperado na conexão: {e}")
 
-    return parser
-
-from type_handler import deserialize_arg, serialize_result
-
-def main():
+async def main():
     """
-    Main function to run the CLI.
+    Starts the WebSocket server.
     """
-    parser = build_cli()
-    args = parser.parse_args()
-
-    sig = inspect.signature(args.func)
-    func_args = {}
-    for param in sig.parameters.values():
-        if param.name == 'self':
-            continue
-        arg_value = getattr(args, param.name, None)
-        if arg_value is not None:
-            param_type = param.annotation
-            is_list = get_origin(param_type) in (list, List)
-            if is_list:
-                item_type = param_type.__args__[0] if param_type.__args__ else str
-                deserialized_value = [deserialize_arg(item, item_type) for item in arg_value]
-            else:
-                deserialized_value = deserialize_arg(arg_value, param.annotation)
-            func_args[param.name] = deserialized_value
-
-    if args.is_method:
-        # For method calls, we need to instantiate the class.
-        # We use the --instance argument for this.
-        instance = deserialize_arg(args.instance, args.class_obj)
-        result = args.func(instance, **func_args)
-    else:
-        result = args.func(**func_args)
-
-    serialized_result = serialize_result(result)
-    print(serialized_result)
-
+    host = "localhost"
+    port = 8765
+    print(f"Servidor WebSocket iniciado em ws://{host}:{port}")
+    async with websockets.serve(handler, host, port):
+        await asyncio.Future()  # Run forever
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

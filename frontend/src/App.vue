@@ -3,52 +3,79 @@ import { RouterView } from 'vue-router'
 </script>
 
 <template>
-  <header class="app-header">
-    <div class="logo">
-      <h1>ControlLab</h1>
-      <span class="subtitle">Next-Gen Control Systems Analysis</span>
-    </div>
-  </header>
+  <div class="app-container">
+    <header class="app-header">
+      <div class="logo">
+        <h1>Controlab</h1>
+      </div>
+      <nav class="navigation">
+        <a href="#">Documentação</a>
+        <a href="#">Exemplos</a>
+        <a href="#">Sobre</a>
+      </nav>
+    </header>
 
-  <main>
-    <RouterView />
-  </main>
+    <main class="main-workspace">
+      <RouterView />
+    </main>
+
+    <footer class="app-footer">
+      <p>© 2025 Controlab. Todos os direitos reservados.</p>
+    </footer>
+  </div>
 </template>
 
 <style>
-/* Global Styles */
-body {
-  background-color: #f0f2f5;
-  color: #333;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
+/* Global styles moved to main.css, this block can be for unscoped overrides if needed */
 </style>
 
 <style scoped>
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
 .app-header {
-  background-color: #ffffff;
+  background-color: #1a1a1a;
   padding: 1rem 2rem;
-  border-bottom: 1px solid #e6d7fb; /* Light Blue Violet */
+  border-bottom: 1px solid #333;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .logo h1 {
   margin: 0;
   font-size: 1.75rem;
   font-weight: 600;
-  color: #8338ec; /* Blue Violet */
+  color: #3a86ff; /* Azul Azure */
 }
 
-.logo .subtitle {
-  font-size: 0.9rem;
-  color: #8338ec; /* Blue Violet */
-  opacity: 0.7;
+.navigation a {
+  color: #f0f0f0;
+  margin-left: 1.5rem;
+  font-weight: 500;
 }
 
-main {
+.navigation a:hover {
+  color: #ffbe0b; /* Amarelo Âmbar */
+}
+
+.main-workspace {
+  flex-grow: 1;
+  background-color: #242424; /* Cinza escuro para a área de trabalho */
   padding: 2rem;
+}
+
+.app-footer {
+  background-color: #1a1a1a;
+  padding: 1.5rem 2rem;
+  border-top: 1px solid #333;
+  text-align: center;
+  color: #888;
+  font-size: 0.9rem;
 }
 </style>

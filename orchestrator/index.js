@@ -9,34 +9,34 @@ const pythonWsUrl = 'ws://localhost:8765';
 app.use(express.json());
 
 /**
- * @api {post} /api/query Forwards a query to the Python backend
- * @apiName PostQuery
+ * @api {post} /api/control Forwards a command pipeline to the Python backend
+ * @apiName PostControlCommand
  * @apiGroup Orchestrator
  *
- * @apiBody {String} query The user's input string (e.g., "G(s) = 1/(s+1)").
+ * @apiBody {String} command The user's input string, potentially with pipes (e.g., "G = tf([1],[1,1]) | bode").
  *
  * @apiSuccess {Object} response The JSON response from the Python backend.
  */
-app.post('/api/query', (req, res) => {
-  const userInput = req.body.query;
-  if (!userInput) {
-    return res.status(400).json({ error: 'Missing "query" in request body' });
+app.post('/api/control', (req, res) => {
+  const command = req.body.command;
+  if (!command) {
+    return res.status(400).json({ error: 'Missing "command" in request body' });
   }
 
-  console.log(`[Orchestrator] Received query: "${userInput}". Forwarding to Python backend...`);
+  console.log(`[Orchestrator] Received command: "${command}". Parsing and forwarding to Python backend...`);
+
+  // 1. Quebra o comando na pipeline
+  const commands = command.split('|').map(c => c.trim());
 
   const ws = new WebSocket(pythonWsUrl);
 
   // Handle WebSocket connection opening
   ws.on('open', () => {
     console.log('[Orchestrator] Connected to Python WebSocket server.');
-    const requestPayload = {
-      type: 'analyze',
-      input: userInput,
-      timestamp: Date.now()
-    };
+    // 2. Envia os comandos em sequência para o Python
+    const requestPayload = { commands: commands };
     ws.send(JSON.stringify(requestPayload));
-    console.log('[Orchestrator] Sent query to Python.');
+    console.log('[Orchestrator] Sent command pipeline to Python:', commands);
   });
 
   // Handle messages received from the Python server
