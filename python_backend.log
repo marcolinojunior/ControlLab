@@ -1,4 +1,0 @@
-Traceback (most recent call last):
-  File "/app/ControlLab-Project/src/controllab/web/backend/controllab_calculator_server.py", line 10, in <module>
-    import websockets
-ModuleNotFoundError: No module named 'websockets'
