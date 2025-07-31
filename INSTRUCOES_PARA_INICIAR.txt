@@ -1,0 +1,43 @@
+# Como Iniciar a Aplicação ControlLab (Arquitetura Completa)
+
+Existem três serviços que precisam ser iniciados em terminais separados para que a aplicação funcione corretamente.
+
+---
+
+### 1. Iniciar o Backend Computacional (Python)
+
+Este servidor é o cérebro da aplicação, responsável por todos os cálculos de engenharia de controle.
+
+No diretório raiz do projeto, execute:
+```bash
+python ControlLab-Project/src/controllab/web/backend/controllab_calculator_server.py
+```
+Você deverá ver uma mensagem indicando que o servidor WebSocket foi iniciado em `ws://localhost:8765`.
+
+---
+
+### 2. Iniciar o Orquestrador (Node.js)
+
+Este serviço atua como uma camada intermediária que conecta o Frontend ao Backend.
+
+Em um **novo terminal**, no diretório raiz do projeto, execute:
+```bash
+cd orchestrator
+node index.js
+```
+Você deverá ver uma mensagem indicando que o servidor do Orquestrador foi iniciado em `http://localhost:3000`.
+
+---
+
+### 3. Iniciar o Frontend (Vue.js)
+
+Esta é a interface do usuário com a qual você irá interagir.
+
+**Importante:** Devido a uma peculiaridade no ambiente de desenvolvimento, o comando `npm run dev` pode não funcionar. Use o comando direto abaixo para maior confiabilidade.
+
+Em um **terceiro terminal**, no diretório raiz do projeto, execute:
+```bash
+cd frontend
+node ./node_modules/vite/bin/vite.js
+```
+Você deverá ver uma mensagem indicando que o servidor de desenvolvimento está rodando, geralmente em um endereço como `http://localhost:5173`. Abra este endereço no seu navegador.
